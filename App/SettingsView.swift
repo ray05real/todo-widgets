@@ -38,13 +38,20 @@ struct SettingsView: View {
             }
 
             Section {
-                Toggle("Show the card on the Lock Screen", isOn: $model.data.settings.keepCard)
+                Toggle("Show cards on the Lock Screen", isOn: $model.data.settings.keepCard)
+                if model.data.settings.keepCard {
+                    Picker("Cards", selection: $model.data.settings.cardPerList) {
+                        Text("Top list only").tag(false)
+                        Text("Every list").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                }
                 Toggle("Show the count in the Dynamic Island", isOn: $model.data.settings.card.showInIsland)
                 Toggle("Show the countdown", isOn: $model.data.settings.showCountdown)
             } header: {
                 Text("Where it shows")
             } footer: {
-                Text("The countdown (bottom right of the card) is how long until your list resets. The card also shows when you pull down from the top of the Home Screen: that's the Lock Screen too, and Apple doesn't let apps show it in one and not the other. Widgets are added and removed on the Home Screen and Lock Screen themselves: press and hold, then Edit or Remove.")
+                Text("Top list only: one card, for the list you drag to the top. Every list: each list gets its own card (switch one off in its ••• menu); the Dynamic Island shows one of them. The countdown (bottom right of a card) is how long until that list resets. Cards also show when you pull down from the top of the Home Screen: that's the Lock Screen too, and Apple doesn't let apps show it in one and not the other. Widgets are added and removed on the Home Screen and Lock Screen themselves: press and hold, then Edit or Remove.")
             }
 
             Section {

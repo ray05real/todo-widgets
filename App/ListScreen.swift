@@ -120,6 +120,13 @@ struct ListScreen: View {
                         nameDraft = list.name ?? ""
                         renaming = true
                     }
+                    if model.data.settings.cardPerList {
+                        // Only matters when every list gets its own card (Settings → Every list).
+                        Toggle("Show on the Lock Screen", isOn: Binding(
+                            get: { list.showOnCard },
+                            set: { on in model.edit(list.id) { $0.showOnCard = on } }
+                        ))
+                    }
                     Button("Delete list", role: .destructive) {
                         model.deleteList(list.id)
                         dismiss()

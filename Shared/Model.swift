@@ -62,6 +62,8 @@ struct TodoList: Codable, Hashable, Identifiable {
     var items: [TodoItem] = []
     /// Unfinished to-dos from the previous list that were waved away ("×") instead of brought over.
     var dismissed: [String] = []
+    /// Whether it gets its own Lock Screen card when Settings is on "Every list".
+    var showOnCard = true
 
     func isRunning(at date: Date) -> Bool {
         start <= date && (end.map { date < $0 } ?? true)
@@ -107,6 +109,20 @@ struct TodoList: Codable, Hashable, Identifiable {
             used += row
         }
         return (pageStart, items[pageStart..<items.count])
+    }
+}
+
+extension TodoList {
+    /// Lists saved before a field existed still load (in an extension, so the memberwise init stays).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decodeIfPresent(String.self, forKey: .name)
+        start = try c.decode(Date.self, forKey: .start)
+        end = try c.decodeIfPresent(Date.self, forKey: .end)
+        items = try c.decodeIfPresent([TodoItem].self, forKey: .items) ?? []
+        dismissed = try c.decodeIfPresent([String].self, forKey: .dismissed) ?? []
+        showOnCard = try c.decodeIfPresent(Bool.self, forKey: .showOnCard) ?? true
     }
 }
 
@@ -208,6 +224,9 @@ struct TodoSettings: Codable, Hashable {
     var planReminder = false
     var planMinutes = 21 * 60
     var keepCard = true
+    /// false: one card showing the top list (drag to reorder). true: a card for every running list that has
+    /// "Show on the Lock Screen" on.
+    var cardPerList = false
 
     init() {}
 
@@ -222,6 +241,7 @@ struct TodoSettings: Codable, Hashable {
         planReminder = try c.decodeIfPresent(Bool.self, forKey: .planReminder) ?? d.planReminder
         planMinutes = try c.decodeIfPresent(Int.self, forKey: .planMinutes) ?? d.planMinutes
         keepCard = try c.decodeIfPresent(Bool.self, forKey: .keepCard) ?? d.keepCard
+        cardPerList = try c.decodeIfPresent(Bool.self, forKey: .cardPerList) ?? d.cardPerList
     }
 
     /// The next daily reset after `date`.
@@ -258,6 +278,13 @@ struct TodoData: Codable, Hashable {
     /// The list the card and the widgets follow: the top running list in the owner's order.
     func current(at date: Date) -> TodoList? {
         running(at: date).first
+    }
+
+    /// The lists that get a Lock Screen card: just the top one, or (Settings → Every list) each running list
+    /// that has "Show on the Lock Screen" on.
+    func listsOnCards(at date: Date) -> [TodoList] {
+        guard settings.cardPerList else { return current(at: date).map { [$0] } ?? [] }
+        return running(at: date).filter { $0.showOnCard }
     }
 
     /// The running list a widget was set to (by name), or the current one.

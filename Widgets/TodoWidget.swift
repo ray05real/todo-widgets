@@ -4,18 +4,30 @@ import WidgetKit
 struct TodoEntry: TimelineEntry {
     let date: Date
     let data: TodoData
+    /// Which running list, in your order: 0 = the top one, 1 = the 2nd, 2 = the 3rd.
+    let rank: Int
 
-    /// The top list in your order (drag to reorder in the app), like the Lock Screen card.
-    var list: TodoList? { data.current(at: date) }
+    var list: TodoList? {
+        let running = data.running(at: date)
+        return running.indices.contains(rank) ? running[rank] : nil
+    }
+
+    var noListText: String {
+        ["No list right now", "No 2nd list right now", "No 3rd list right now"][min(rank, 2)]
+    }
 }
 
 struct TodoProvider: TimelineProvider {
+    let rank: Int
+
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntry(date: .now, data: .sample)
+        TodoEntry(date: .now, data: .sample, rank: 0)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
-        completion(TodoEntry(date: .now, data: context.isPreview ? .sample : TodoStore.loadData()))
+        completion(context.isPreview
+            ? TodoEntry(date: .now, data: .sample, rank: 0)
+            : TodoEntry(date: .now, data: TodoStore.loadData(), rank: rank))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
@@ -24,23 +36,44 @@ struct TodoProvider: TimelineProvider {
         let data = TodoStore.loadData()
         let now = Date.now
         let dates = [now] + data.changes(after: now).prefix(20)
-        let entries = dates.map { TodoEntry(date: $0, data: data) }
+        let entries = dates.map { TodoEntry(date: $0, data: data, rank: rank) }
         completion(Timeline(entries: entries, policy: .never))
     }
 }
 
-/// The Home Screen widget (small, medium, large) and the small Lock Screen widget under the clock. A plain widget
-/// with no settings: the "choose a list" kind (AppIntentConfiguration) stayed a grey skeleton on the sideloaded app,
-/// even in the Add Widget preview. A new kind name, so iOS forgets the old one.
-struct TodoWidget: Widget {
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "TodoListWidget", provider: TodoProvider()) { entry in
+/// The Home Screen widgets (small, medium, large) and the small Lock Screen widget under the clock: one for the
+/// top list and one each for the 2nd and 3rd, in your order. Plain widgets with no settings: the "choose a list"
+/// kind (AppIntentConfiguration) stayed a grey skeleton on the sideloaded app, even in the Add Widget preview.
+enum TodoWidgetKind {
+    static func configuration(kind: String, rank: Int, name: String, description: String) -> some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: TodoProvider(rank: rank)) { entry in
             TodoWidgetView(entry: entry)
         }
-        .configurationDisplayName("To-do")
-        .description("Tick things off without opening the app.")
+        .configurationDisplayName(name)
+        .description(description)
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular])
         .contentMarginsDisabled()
+    }
+}
+
+struct TodoWidget: Widget {
+    var body: some WidgetConfiguration {
+        TodoWidgetKind.configuration(kind: "TodoListWidget", rank: 0, name: "To-do",
+                                     description: "Your top list. Tick things off without opening the app.")
+    }
+}
+
+struct SecondListWidget: Widget {
+    var body: some WidgetConfiguration {
+        TodoWidgetKind.configuration(kind: "TodoListWidget2", rank: 1, name: "To-do · 2nd list",
+                                     description: "The 2nd list in your order.")
+    }
+}
+
+struct ThirdListWidget: Widget {
+    var body: some WidgetConfiguration {
+        TodoWidgetKind.configuration(kind: "TodoListWidget3", rank: 2, name: "To-do · 3rd list",
+                                     description: "The 3rd list in your order.")
     }
 }
 
@@ -104,7 +137,7 @@ struct HomeScreenWidget: View {
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("No list right now")
+                    Text(entry.noListText)
                         .font(.system(size: 16, weight: .semibold))
                     Text("Tap to make one")
                         .font(.system(size: 14))
@@ -161,7 +194,7 @@ struct LockScreenWidget: View {
                 }
             }
         } else {
-            Text(entry.list == nil ? "No list right now" : "Nothing on the list yet")
+            Text(entry.list == nil ? entry.noListText : "Nothing on the list yet")
                 .font(.system(size: 13))
         }
     }

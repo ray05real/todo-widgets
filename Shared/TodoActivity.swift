@@ -23,4 +23,7 @@ struct TodoActivityAttributes: ActivityAttributes {
     }
 
     var startedAt: Date
+    /// The list this card belongs to when every list has its own card; nil for the one card that follows the top
+    /// list (and for cards started before lists had their own).
+    var listID: String?
 }

@@ -36,12 +36,13 @@ enum LiveCard {
 
     static var isRunning: Bool { !liveCards.isEmpty }
 
-    static func state(for data: TodoData, at now: Date = .now) -> TodoActivityAttributes.ContentState {
+    /// What a card shows: `list`, or "No list right now" when there's none.
+    static func state(for list: TodoList?, in data: TodoData, at now: Date = .now) -> TodoActivityAttributes.ContentState {
         let card = data.settings.card
         var look = data.settings.text
         if let size = card.size { look.size = size }
         let countdown = data.settings.showCountdown
-        guard let list = data.current(at: now) else {
+        guard let list else {
             return TodoActivityAttributes.ContentState(
                 listID: nil, title: "TO DO", end: nil, items: [], first: 0, total: 0, left: 0,
                 look: look, card: card, showCountdown: countdown, nextReady: !data.planned(after: now).isEmpty
@@ -60,26 +61,40 @@ enum LiveCard {
         )
     }
 
-    /// Brings the card up to date, or puts up a new one if it's missing or over an hour old.
+    /// Brings the cards up to date: one following the top list, or one per list (Settings → Every list). Cards
+    /// that are missing or over an hour old are replaced by new ones; cards no longer wanted are taken away.
     static func sync(_ data: TodoData, from source: String, forceRenew: Bool = false) async {
         guard data.settings.keepCard else {
             await stop()
             return
         }
-        let content = ActivityContent(state: state(for: data), staleDate: data.current(at: .now)?.end)
-        let live = liveCards
-        if let card = live.first, !forceRenew, Date.now.timeIntervalSince(card.attributes.startedAt) < renewAfter {
-            await card.update(content)
-            return
+        let now = Date.now
+        // nil = the one card that follows the top list (it shows "No list right now" when there's none).
+        let wanted: [(id: String?, list: TodoList?)] = data.settings.cardPerList
+            ? data.listsOnCards(at: now).map { (id: $0.id, list: $0) }
+            : [(id: nil, list: data.current(at: now))]
+
+        for card in cards where !wanted.contains(where: { $0.id == card.attributes.listID }) {
+            await card.end(nil, dismissalPolicy: .immediate)
         }
-        await stop()
-        do {
-            _ = try Activity<TodoActivityAttributes>.request(
-                attributes: TodoActivityAttributes(startedAt: .now), content: content, pushType: nil
-            )
-            Log.add("Card \(live.isEmpty ? "started" : "renewed") (from the \(source))")
-        } catch {
-            Log.add("Card didn't start (from the \(source)): \(error)")
+        for (id, list) in wanted {
+            let content = ActivityContent(state: state(for: list, in: data, at: now), staleDate: list?.end)
+            let mine = liveCards.filter { $0.attributes.listID == id }
+            if let card = mine.first, !forceRenew, now.timeIntervalSince(card.attributes.startedAt) < renewAfter {
+                await card.update(content)
+                continue
+            }
+            for card in cards where card.attributes.listID == id {
+                await card.end(nil, dismissalPolicy: .immediate)
+            }
+            do {
+                _ = try Activity<TodoActivityAttributes>.request(
+                    attributes: TodoActivityAttributes(startedAt: now, listID: id), content: content, pushType: nil
+                )
+                Log.add("Card \(mine.isEmpty ? "started" : "renewed") (from the \(source))")
+            } catch {
+                Log.add("Card didn't start (from the \(source)): \(error)")
+            }
         }
     }
 

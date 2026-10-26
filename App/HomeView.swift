@@ -74,9 +74,10 @@ struct HomeView: View {
                 }
             } else {
                 Section {
+                    let onCards = Set(model.data.listsOnCards(at: now).map { $0.id })
                     ForEach(running) { list in
                         NavigationLink(value: list.id) {
-                            ListSummary(list: list, now: now, onCard: list.id == running.first?.id)
+                            ListSummary(list: list, now: now, onCard: model.data.settings.keepCard && onCards.contains(list.id))
                         }
                     }
                     .onMove { source, destination in
@@ -86,7 +87,7 @@ struct HomeView: View {
                     Text("Now")
                 } footer: {
                     if running.count > 1 {
-                        Text("Hold a list and drag it to reorder. The top one shows on your Lock Screen and widgets.")
+                        Text("Hold a list and drag it to reorder. 🔒 = on the Lock Screen. The To-do widget shows the top list; the \"2nd list\" and \"3rd list\" widgets show the next ones.")
                     }
                 }
             }

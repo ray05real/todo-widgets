@@ -5,6 +5,8 @@ import WidgetKit
 struct TodoWidgetsBundle: WidgetBundle {
     var body: some Widget {
         TodoWidget()
+        SecondListWidget()
+        ThirdListWidget()
         TodoLiveActivity()
     }
 }
