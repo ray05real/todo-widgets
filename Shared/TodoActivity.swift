@@ -1,15 +1,24 @@
 import ActivityKit
 import Foundation
 
-/// The Lock Screen card (a Live Activity). Apple ends one after 8 hours, so it can be renewed: a new card replaces
-/// the old one and the 8 hours start again.
+/// The Lock Screen card (a Live Activity). Apple ends one 8 hours after it starts, so the app replaces it with a
+/// new one whenever you tick something or open the app (see LiveCard).
 struct TodoActivityAttributes: ActivityAttributes {
     struct ContentState: Codable, Hashable {
-        /// The first few items, unticked first (the card has room for about 4).
+        /// Nil when no list is running.
+        var listID: String?
+        var title: String
+        var end: Date?
+        /// The block of to-dos on show (see TodoList.window).
         var items: [TodoItem]
+        var first: Int
+        var total: Int
         var left: Int
+        /// The font and size of to-dos without their own.
+        var look: TextLook
+        /// Whether a planned list takes over when this one ends.
+        var nextReady: Bool
     }
 
-    var listName: String
     var startedAt: Date
 }

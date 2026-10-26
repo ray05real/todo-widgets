@@ -1,20 +1,25 @@
 import SwiftUI
 
-/// A circle that fills with a tick, then the to-do's text (crossed out once ticked).
+/// A circle that fills with a tick, then the to-do's text (crossed out once ticked), in the to-do's colour, font and
+/// size. The whole row is the tap target.
 struct CheckToggleStyle: ToggleStyle {
-    var compact = false
+    var look: TextLook
+    var color = 0
 
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: compact ? 5 : 8) {
+        let tint = Palette.color(color)
+        return HStack(spacing: 8) {
             Image(systemName: configuration.isOn ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: compact ? 14 : 18))
-                .foregroundStyle(configuration.isOn ? Color.green : Color.secondary)
+                .font(.system(size: look.circle))
+                .foregroundStyle(tint.opacity(configuration.isOn ? 0.55 : 0.9))
             configuration.label
-                .font(.system(size: compact ? 13 : 14))
+                .font(look.swiftUIFont)
+                .lineLimit(1)
                 .strikethrough(configuration.isOn)
-                .foregroundStyle(configuration.isOn ? Color.secondary : Color.primary)
+                .foregroundStyle(tint.opacity(configuration.isOn ? 0.45 : 1))
             Spacer(minLength: 0)
         }
+        .frame(maxHeight: .infinity)
         .contentShape(Rectangle())
     }
 }

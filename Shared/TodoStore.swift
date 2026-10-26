@@ -40,24 +40,32 @@ enum TodoStore {
     /// The last keychain result (0 = fine, -34018 = not allowed by the certificate).
     static var lastKeychainStatus: OSStatus = errSecSuccess
 
-    static func load() -> [TodoItem] {
-        guard let data = readData(),
-              let items = try? JSONDecoder().decode([TodoItem].self, from: data)
-        else { return TodoItem.samples }
-        return items
+    static func loadData() -> TodoData {
+        guard let raw = readData() else { return TodoData() }
+        if let data = try? JSONDecoder().decode(TodoData.self, from: raw) { return data }
+        // The first test version kept one plain list of to-dos.
+        if let items = try? JSONDecoder().decode([TodoItem].self, from: raw) {
+            var data = TodoData()
+            data.lists = [TodoList(start: .now, end: data.settings.nextReset(after: .now), items: items)]
+            return data
+        }
+        return TodoData()
     }
 
-    static func save(_ items: [TodoItem]) {
-        guard let data = try? JSONEncoder().encode(items) else { return }
-        writeData(data)
+    static func saveData(_ data: TodoData) {
+        guard let raw = try? JSONEncoder().encode(data) else { return }
+        writeData(raw)
     }
 
-    /// Ticks or unticks one item and returns the new list.
-    static func toggle(_ id: String) -> [TodoItem] {
-        var items = load()
-        if let i = items.firstIndex(where: { $0.id == id }) { items[i].done.toggle() }
-        save(items)
-        return items
+    /// Ticks or unticks one to-do and returns everything as it is now.
+    static func toggle(listID: String, itemID: String) -> TodoData {
+        var data = loadData()
+        if let l = data.lists.firstIndex(where: { $0.id == listID }),
+           let i = data.lists[l].items.firstIndex(where: { $0.id == itemID }) {
+            data.lists[l].items[i].done.toggle()
+        }
+        saveData(data)
+        return data
     }
 
     // MARK: - Files and keychain

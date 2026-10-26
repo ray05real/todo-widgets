@@ -27,6 +27,17 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   profiles), else app-only storage. `Signing` reads the real entitlements from the signed binary and the embedded
   profile; the app's "Test report" shows them (the owner copies it back).
 
+## The owner's choices (26 Oct 2026)
+- Ticked to-dos **stay where they are** (moving them to the bottom felt overwhelming). Widgets and the card show a
+  block of to-dos that fits; the next block appears once the whole block is ticked (`TodoList.window`).
+- Rows were too small to hit: bigger text (default 17) and taller rows that grow with the text.
+- Font, font size and colour, like Word: a default in Settings, and per to-do (Edit).
+- Any number of lists. Each has a start and a length (until the daily reset time, 4 h, 12 h, 24 h, 3 days, a picked
+  end, or no end) and a countdown (hourglass) in the corner. Lists can be planned ahead; a planned list takes over
+  when the current one ends. Widgets follow the current list or a named one (Edit Widget).
+- Unfinished to-dos are **not** carried over automatically: they're offered at the top of the next list (+ / ×).
+- A notification when a list ends; an optional daily "plan your next list" reminder.
+
 ## Status
-- 26 Oct 2026: first test build (checks what the certificate allows). Next: the owner installs it and sends the
-  report; then the real app (daily reset, several lists, the notification look).
+- 26 Oct 2026: test build worked on the iPhone (widgets, card, Dynamic Island ticks). Second build adds the choices
+  above.
