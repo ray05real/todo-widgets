@@ -174,8 +174,8 @@ struct HomeScreenWidget: View {
     private func header(_ list: TodoList, window: (start: Int, items: ArraySlice<TodoItem>), narrow: Bool) -> some View {
         HStack(spacing: 6) {
             TitleBadge(title: list.headerTitle)
-            if list.items.count > window.items.count, !narrow {
-                Text("\(window.start + 1)–\(window.start + window.items.count) of \(list.items.count)")
+            if list.items.count > window.start + window.items.count, !narrow {
+                Text("+(list.items.count - window.start - window.items.count) more")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

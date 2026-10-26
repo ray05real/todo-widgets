@@ -151,8 +151,8 @@ struct LockScreenCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 TitleBadge(title: state.title)
-                if state.total > state.items.count {
-                    Text("\(state.first + 1)–\(state.first + state.items.count) of \(state.total)")
+                if state.total > state.first + state.items.count {
+                    Text("+(state.total - state.first - state.items.count) more")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
