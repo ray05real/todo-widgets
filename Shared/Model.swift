@@ -128,9 +128,9 @@ struct TodoList: Codable, Hashable, Identifiable {
     }
 
     /// The block of to-dos a widget or the card shows when they don't all fit in `columns` columns of `height`
-    /// (the last column `reserve` shorter, leaving room for the countdown): ticked ones stay where they are, and the
-    /// next block appears once everything in this one is ticked.
-    func window(height: Double, columns: Int = 1, reserve: Double = 0,
+    /// (the last column, or with `reserveFirst` the first, `reserve` shorter, leaving room for the countdown):
+    /// ticked ones stay where they are, and the next block appears once everything in this one is ticked.
+    func window(height: Double, columns: Int = 1, reserve: Double = 0, reserveFirst: Bool = false,
                 rowHeight: (TodoItem) -> Double) -> (start: Int, items: ArraySlice<TodoItem>) {
         guard !items.isEmpty else { return (0, []) }
         let firstOpen = items.firstIndex(where: { !$0.done }) ?? (items.count - 1)
@@ -139,7 +139,8 @@ struct TodoList: Codable, Hashable, Identifiable {
         var used = 0.0
         for (i, item) in items.enumerated() {
             let row = rowHeight(item)
-            let limit = column == columns - 1 ? height - reserve : height
+            let shortened = reserveFirst ? column == 0 : column == columns - 1
+            let limit = shortened ? height - reserve : height
             if used + row > limit, used > 0 {
                 if column + 1 < columns {
                     column += 1
@@ -171,14 +172,16 @@ extension TodoList {
 }
 
 extension Collection where Element == TodoItem {
-    /// Splits to-dos into up to `count` columns of at most `height` (the last one `reserve` shorter), filling each
-    /// column top to bottom.
-    func inColumns(_ count: Int, height: Double, reserve: Double = 0, rowHeight: (TodoItem) -> Double) -> [[TodoItem]] {
+    /// Splits to-dos into up to `count` columns of at most `height` (the last one, or with `reserveFirst` the first,
+    /// `reserve` shorter), filling each column top to bottom.
+    func inColumns(_ count: Int, height: Double, reserve: Double = 0, reserveFirst: Bool = false,
+                   rowHeight: (TodoItem) -> Double) -> [[TodoItem]] {
         var columns: [[TodoItem]] = [[]]
         var used = 0.0
         for item in self {
             let row = rowHeight(item)
-            let limit = columns.count == count ? height - reserve : height
+            let shortened = reserveFirst ? columns.count == 1 : columns.count == count
+            let limit = shortened ? height - reserve : height
             if used + row > limit, used > 0, columns.count < count {
                 columns.append([])
                 used = 0
@@ -210,8 +213,27 @@ enum CardStyle: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// Where the countdown sits on the card and the widgets.
+enum TimerPlace: String, Codable, CaseIterable, Identifiable {
+    /// In the title line: costs no to-do.
+    case topRight
+    /// On its own line under the first or last column: costs one to-do there.
+    case bottomLeft, bottomRight
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .topRight: return "Top right"
+        case .bottomLeft: return "Bottom left"
+        case .bottomRight: return "Bottom right"
+        }
+    }
+}
+
 /// How the Lock Screen card (and its Dynamic Island versions) look.
 struct CardSettings: Codable, Hashable {
+    var timerPlace = TimerPlace.topRight
     var style = CardStyle.standard
     /// Each look's brightness, remembered separately, in steps of 0.05 from -0.25 (darker) to 0.25 (lighter);
     /// 0 is the middle mark. (`shade` is the Glass one: it was the only one before White and Black had theirs.)
@@ -229,6 +251,7 @@ struct CardSettings: Codable, Hashable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = CardSettings()
+        timerPlace = (try? c.decodeIfPresent(TimerPlace.self, forKey: .timerPlace)) ?? d.timerPlace
         style = (try? c.decodeIfPresent(CardStyle.self, forKey: .style)) ?? d.style
         shade = try c.decodeIfPresent(Double.self, forKey: .shade) ?? d.shade
         whiteShade = try c.decodeIfPresent(Double.self, forKey: .whiteShade) ?? d.whiteShade

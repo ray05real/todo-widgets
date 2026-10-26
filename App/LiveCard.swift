@@ -48,8 +48,12 @@ enum LiveCard {
                 look: look, card: card, showCountdown: countdown, nextReady: !data.planned(after: now).isEmpty
             )
         }
-        let reserve = countdown && list.end != nil ? CardLayout.timerHeight : 0
-        let window = list.window(height: CardLayout.rowsHeight, columns: card.columns, reserve: reserve) {
+        // A countdown at the bottom gets its own line under a column (one to-do fewer there); at the top it shares
+        // the title line.
+        let atBottom = countdown && list.end != nil && card.timerPlace != .topRight
+        let window = list.window(height: CardLayout.rowsHeight, columns: card.columns,
+                                 reserve: atBottom ? CardLayout.timerHeight : 0,
+                                 reserveFirst: card.timerPlace == .bottomLeft) {
             look.applied(to: $0).cardRow
         }
         let items = window.items.map { (item: TodoItem) -> TodoItem in

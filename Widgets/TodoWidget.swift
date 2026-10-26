@@ -106,10 +106,13 @@ struct HomeScreenWidget: View {
                     let narrow = geo.size.width < 200
                     let columns = narrow ? 1 : entry.data.settings.widgetColumns
                     let height = Double(geo.size.height) - headerHeight
-                    // The countdown gets its own line under the last column.
-                    let reserve = timerShown ? CardLayout.timerHeight : 0
-                    let window = list.window(height: height, columns: columns, reserve: reserve, rowHeight: rowHeight)
-                    let split = window.items.inColumns(columns, height: height, reserve: reserve, rowHeight: rowHeight)
+                    // A countdown at the bottom gets its own line under the first or last column.
+                    let reserve = timerAtBottom ? CardLayout.timerHeight : 0
+                    let first = place == .bottomLeft
+                    let window = list.window(height: height, columns: columns, reserve: reserve, reserveFirst: first,
+                                             rowHeight: rowHeight)
+                    let split = window.items.inColumns(columns, height: height, reserve: reserve, reserveFirst: first,
+                                                       rowHeight: rowHeight)
                     header(list, window: window, narrow: narrow)
                     if list.items.isEmpty {
                         Text("Nothing on this list yet")
@@ -151,24 +154,24 @@ struct HomeScreenWidget: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .overlay(alignment: .bottomTrailing) {
-            // Bottom right, inside the same margins as the to-dos, on the line kept free for it.
-            if let end = entry.list?.end, timerShown {
-                Countdown(end: end)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.72))
-                    .lineLimit(1)
-                    .frame(maxWidth: 200, alignment: .trailing)
+        .overlay(alignment: place == .bottomLeft ? .bottomLeading : .bottomTrailing) {
+            // At the bottom: inside the same margins as the to-dos, on the line kept free for it.
+            if let end = entry.list?.end, timerAtBottom {
+                TimerText(end: end)
                     .frame(height: CardLayout.timerHeight)
-                    .padding(.trailing, 14)
+                    .padding(.horizontal, 14)
                     .padding(.bottom, 12)
             }
         }
     }
 
+    private var place: TimerPlace { entry.data.settings.card.timerPlace }
+
     private var timerShown: Bool {
         entry.list?.end != nil && entry.data.settings.showCountdown
     }
+
+    private var timerAtBottom: Bool { timerShown && place != .topRight }
 
     /// "TO DO" in its box, and which to-dos are showing when they don't all fit.
     private func header(_ list: TodoList, window: (start: Int, items: ArraySlice<TodoItem>), narrow: Bool) -> some View {
@@ -181,6 +184,9 @@ struct HomeScreenWidget: View {
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
+            if let end = list.end, timerShown, place == .topRight {
+                TimerText(end: end)
+            }
         }
         .lineLimit(1)
         .frame(height: headerHeight, alignment: .top)

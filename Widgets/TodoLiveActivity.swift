@@ -107,19 +107,36 @@ struct TitleBadge: View {
     }
 }
 
+/// The countdown's look everywhere: the size and brightness of a notification's "6m ago" (11 looked too small and
+/// faint, 15 too big).
+struct TimerText: View {
+    let end: Date
+
+    var body: some View {
+        Countdown(end: end)
+            .font(.system(size: 13))
+            .foregroundStyle(Color.primary.opacity(0.72))
+            .lineLimit(1)
+    }
+}
+
 /// The card's tick rows: as many of the card's to-dos as fit in `height`, in one or two columns, the last column
-/// `reserve` shorter so the countdown has its own line under it.
+/// (or with `reserveFirst` the first) `reserve` shorter so a countdown at the bottom has its own line under it.
 struct CardRows: View {
     let state: TodoActivityAttributes.ContentState
     let height: Double
     let source: String
     var reserve = 0.0
+    var reserveFirst = false
 
     var body: some View {
         let rowHeight = { (item: TodoItem) in state.look.applied(to: item).cardRow }
         let shown = TodoList(id: state.listID ?? "", start: .now, items: state.items)
-            .window(height: height, columns: state.card.columns, reserve: reserve, rowHeight: rowHeight)
-        let columns = shown.items.inColumns(state.card.columns, height: height, reserve: reserve, rowHeight: rowHeight)
+            .window(height: height, columns: state.card.columns, reserve: reserve, reserveFirst: reserveFirst,
+                    rowHeight: rowHeight)
+        let columns = shown.items.inColumns(state.card.columns, height: height, reserve: reserve,
+                                            reserveFirst: reserveFirst, rowHeight: rowHeight)
+        let shortened = reserveFirst ? 0 : columns.count - 1
         HStack(alignment: .top, spacing: 10) {
             ForEach(Array(columns.enumerated()), id: \.offset) { index, column in
                 VStack(alignment: .leading, spacing: 0) {
@@ -132,7 +149,7 @@ struct CardRows: View {
                         .frame(height: look.cardRow)
                     }
                 }
-                .padding(.bottom, index == columns.count - 1 ? reserve : 0)
+                .padding(.bottom, index == shortened ? reserve : 0)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -148,6 +165,8 @@ struct LockScreenCard: View {
 
     var body: some View {
         let state = context.state
+        let place = state.card.timerPlace
+        let atBottom = timerShown && place != .topRight
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 TitleBadge(title: state.title)
@@ -158,6 +177,9 @@ struct LockScreenCard: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
+                if let end = state.end, timerShown, place == .topRight {
+                    TimerText(end: end)
+                }
             }
             .frame(height: 21, alignment: .top)
 
@@ -177,23 +199,18 @@ struct LockScreenCard: View {
                     .padding(.top, 6)
             } else {
                 CardRows(state: state, height: CardLayout.rowsHeight, source: "Lock Screen card",
-                         reserve: timerShown ? CardLayout.timerHeight : 0)
+                         reserve: atBottom ? CardLayout.timerHeight : 0, reserveFirst: place == .bottomLeft)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
-        .overlay(alignment: .bottomTrailing) {
-            // On its own line under the last column, inside the same margins as the to-dos; the size and brightness
-            // of a notification's "6m ago" (11 looked too small and faint, 15 too big).
-            if let end = state.end, timerShown {
-                Countdown(end: end)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Color.primary.opacity(0.72))
-                    .lineLimit(1)
-                    .frame(maxWidth: 200, alignment: .trailing)
+        .overlay(alignment: place == .bottomLeft ? .bottomLeading : .bottomTrailing) {
+            // At the bottom: on its own line under the first or last column, inside the same margins as the to-dos.
+            if let end = state.end, atBottom {
+                TimerText(end: end)
                     .frame(height: CardLayout.timerHeight)
-                    .padding(.trailing, 14)
+                    .padding(.horizontal, 14)
                     .padding(.bottom, 7)
             }
         }

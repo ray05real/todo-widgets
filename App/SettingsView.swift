@@ -54,6 +54,14 @@ struct SettingsView: View {
                 }
                 Toggle("Show the count in the Dynamic Island", isOn: $model.data.settings.card.showInIsland)
                 Toggle("Show the countdown", isOn: $model.data.settings.showCountdown)
+                if model.data.settings.showCountdown {
+                    Picker("Countdown", selection: $model.data.settings.card.timerPlace) {
+                        ForEach(TimerPlace.allCases) { place in
+                            Text(place.label).tag(place)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
             } header: {
                 Text("Where it shows")
             } footer: {
