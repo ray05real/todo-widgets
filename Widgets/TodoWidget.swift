@@ -51,7 +51,8 @@ enum TodoWidgetKind {
         }
         .configurationDisplayName(name)
         .description(description)
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular])
+        // Extra large: Apple lists it for iPad (and the tall iPhone kind from iOS 27); offered in case iOS shows it.
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge, .accessoryRectangular])
         .contentMarginsDisabled()
     }
 }
