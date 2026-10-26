@@ -15,7 +15,7 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   tap Renew. Ticks on a locked phone only work once Face ID has unlocked it (Apple's rule).
 
 ## How it is built (no Mac)
-- Swift / SwiftUI, WidgetKit, ActivityKit, App Intents. iOS 17+.
+- Swift / SwiftUI, WidgetKit, ActivityKit, App Intents. iOS 26+ (the owner's iPhone is on 26.5; raised from 17 for the toolbar's sharedBackgroundVisibility).
 - `project.yml` (XcodeGen) makes the Xcode project on GitHub's Mac; `.github/workflows/build.yml` builds an
   **unsigned** .ipa on every push to main and publishes it as a GitHub Release. The owner downloads it on the
   iPhone and signs it in Kravasigner.

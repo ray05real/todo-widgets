@@ -13,29 +13,23 @@ struct HomeView: View {
             TimelineView(.everyMinute) { timeline in
                 lists(at: timeline.date)
             }
-            .navigationTitle("To-do")
-            .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                // The logo in white on the left and the settings button on the right, straight under the status
-                // bar, 16 points in like the lists. (Inside the list, the section's rounded corners cut the logo
-                // off and the section spacing left an empty band above it.)
-                HStack(spacing: 12) {
+            // The logo and the settings cog sit in iOS's own top bar, exactly where the back arrow is on the other
+            // screens (the owner's reference). The logo has no glass bubble behind it; the cog keeps one, like the
+            // back arrow.
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
                     Logo()
-                        .frame(height: 34)
-                    Spacer()
+                        .frame(height: 30)
+                }
+                .sharedBackgroundVisibility(.hidden)
+                ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(value: Self.settingsRoute) {
                         Image(systemName: "gearshape")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(.primary)
-                            .frame(width: 40, height: 40)
-                            .background(.ultraThinMaterial, in: Circle())
                     }
                     .accessibilityLabel("Settings")
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 2)
-                .padding(.bottom, 4)
-                .background(Color(.systemGroupedBackground))
             }
             .navigationDestination(for: String.self) { id in
                 if id == Self.settingsRoute {
