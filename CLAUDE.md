@@ -52,7 +52,7 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   bottom right. The ↻ renew button was removed (it confused the owner; the card renews itself).
 - Switches: card on/off, the count in the Dynamic Island on/off (empty compact views), countdown.
 - "Not finished last time" sits below the Add box.
-- App icon: "To Do" in a box, one slit per shape (box, T, D) like Revolut's R, dark shaded with a light rim (drawn
+- App icon: "To Do" in a box, one slit per shape (box, T, D) like Revolut's R, white-on-black (inverted from black-on-white, owner 26 Oct), shaded with a darker rim (drawn
   with System.Drawing in PowerShell; see git history for the drawing code).
 
 ## Status
