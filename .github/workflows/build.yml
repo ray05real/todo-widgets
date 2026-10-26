@@ -37,6 +37,7 @@ jobs:
           set -o pipefail
           xcodebuild -project Todo.xcodeproj -target Todo -configuration Release -sdk iphoneos \
             SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION="0.${{ github.run_number }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             build 2>&1 | tee build.log | xcbeautify --renderer github-actions
 
       - name: Pack the .ipa
