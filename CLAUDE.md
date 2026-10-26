@@ -45,7 +45,11 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   (`CardTint`: see-through black, 0.32 at the slider's middle mark ≈ notifications, clear at the right end), or
   White (paper-white, dark text) or Black (white text); each look keeps its own brightness (CardSettings shade / whiteShade / blackShade). Glass / Clear glass (`glassEffect`) and See-through were tried and dropped.
 - The logo sits top left on the first screen, level with the settings button on the right.
-- The Home Screen widget is a plain StaticConfiguration (kind "TodoListWidget") showing the top list: the
+- Lock Screen cards: "Top list only" (one card following the top list; attributes.listID nil) or "Every list" (a
+  card per running list with showOnCard on; attributes.listID = the list). LiveCard.sync adds, updates, renews and
+  removes cards to match. Widgets: "To-do" (top list), "To-do · 2nd list", "To-do · 3rd list" (by rank in the
+  owner's order). The pull-down-from-the-top view is the Lock Screen too: cards can't be hidden there alone.
+- The Home Screen widgets are plain StaticConfigurations (kind "TodoListWidget", …2, …3): the
   AppIntentConfiguration ("choose a list") version stayed a grey skeleton on the sideloaded app, even in the Add
   Widget preview (fixed in 0.12, confirmed by the owner).
 - Apple caps the card at 160 points tall: it can't be made bigger. 2 columns or smaller text (down to 9) fit more.
