@@ -119,9 +119,9 @@ struct HomeScreenWidget: View {
             // Centred on a row's line at the bottom, inside the same margins as the to-dos.
             if let end = entry.list?.end, entry.data.settings.showCountdown {
                 Countdown(end: end)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: 110, alignment: .trailing)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.primary.opacity(0.72))
+                    .frame(maxWidth: 140, alignment: .trailing)
                     .frame(height: entry.data.settings.text.row)
                     .padding(.trailing, 14)
                     .padding(.bottom, 12)
