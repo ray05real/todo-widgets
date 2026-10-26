@@ -48,7 +48,10 @@ enum LiveCard {
                 look: look, card: card, showCountdown: countdown, nextReady: !data.planned(after: now).isEmpty
             )
         }
-        let window = list.window(height: CardLayout.rowsHeight, columns: card.columns) { look.applied(to: $0).cardRow }
+        let reserve = countdown && list.end != nil ? CardLayout.timerHeight : 0
+        let window = list.window(height: CardLayout.rowsHeight, columns: card.columns, reserve: reserve) {
+            look.applied(to: $0).cardRow
+        }
         let items = window.items.map { (item: TodoItem) -> TodoItem in
             var short = item
             short.title = String(item.title.prefix(60))

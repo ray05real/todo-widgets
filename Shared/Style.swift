@@ -65,4 +65,6 @@ enum CardLayout {
     static let rowsHeight = 122.0
     /// Room for rows in the Dynamic Island when it's opened.
     static let islandHeight = 96.0
+    /// The countdown's own line at the bottom of the last column, so the last to-do never runs into it.
+    static let timerHeight = 18.0
 }

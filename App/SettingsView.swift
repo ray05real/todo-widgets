@@ -17,7 +17,7 @@ struct SettingsView: View {
             } header: {
                 Text("Text")
             } footer: {
-                Text("For every to-do that doesn't have its own font or size. Bigger text fits fewer to-dos on a widget.")
+                Tip("For to-dos without their own font or size.")
             }
 
             Section {
@@ -25,7 +25,7 @@ struct SettingsView: View {
             } header: {
                 Text("Daily reset")
             } footer: {
-                Text("Lists end at this time unless you pick another length, and you get a notification to make the next one.")
+                Tip("Lists end at this time, and a notification reminds you to make the next one.")
             }
 
             Section {
@@ -51,7 +51,7 @@ struct SettingsView: View {
             } header: {
                 Text("Where it shows")
             } footer: {
-                Text("Top list only: one card, for the list you drag to the top. Every list: each list gets its own card (switch one off in its ••• menu); the Dynamic Island shows one of them. The countdown (bottom right of a card) is how long until that list resets. Cards also show when you pull down from the top of the Home Screen: that's the Lock Screen too, and Apple doesn't let apps show it in one and not the other. Widgets are added and removed on the Home Screen and Lock Screen themselves: press and hold, then Edit or Remove.")
+                Tip("Top list only: one card, for the list at the top. Every list: a card each (switch one off in its ••• menu).")
             }
 
             Section {
@@ -88,7 +88,11 @@ struct SettingsView: View {
             } header: {
                 Text("Lock Screen card")
             } footer: {
-                Text("Lock the phone to see changes. Each look keeps its own brightness. On Glass the middle mark is about as dark as your notifications and the right end is fully see-through; White is paper-white at the right end, Black solid black at the left end. Apple fixes the card's height (about a fifth of the screen), so 2 columns or smaller text fit more: about 6 a column at size 12, 7 at 10, 8 at 9. Apple also removes a card after 8 hours; it puts itself back whenever you tick something or open the app.")
+                Tip("Lock the phone to see changes. Apple fixes the card’s height: 2 columns or smaller text fit more.")
+            }
+
+            Section {
+                Toggle("Show tips", isOn: $model.data.settings.showTips)
             }
         }
         .navigationTitle("Settings")

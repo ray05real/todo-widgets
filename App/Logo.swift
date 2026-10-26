@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The app's logo, drawn the same way as the icon: "To Do" in a box, with one slit each in the box, the T and the D
-/// (like Revolut's R). Units are the capital letters' height.
+/// The app's logo, drawn the same way as the icon: "To Do" in a box with rounded corners, with one slit each in the
+/// box, the T and the D (like Revolut's R). Units are the capital letters' height.
 struct LogoShape: Shape {
     private let stroke = 0.18
     private let slit = 0.085
@@ -12,6 +12,8 @@ struct LogoShape: Shape {
     private let kern = 0.06
     private let space = 0.34
     private let pad = 0.42
+    /// The box's corner radius (with the same continuous curve iOS uses).
+    private let corner = 0.6
 
     private var wordWidth: Double { tWidth + kern + oWidth + space + dWidth + kern + oWidth }
 
@@ -28,12 +30,13 @@ struct LogoShape: Shape {
         let s = stroke
         var path = Path()
 
-        // The box: along the top, down the right, along the bottom and up the left, stopping short of the top.
-        path.addLines([
-            p(x0, y0), p(x1, y0), p(x1, y1), p(x0, y1), p(x0, y0 + s + slit), p(x0 + s, y0 + s + slit),
-            p(x0 + s, y1 - s), p(x1 - s, y1 - s), p(x1 - s, y0 + s), p(x0, y0 + s),
-        ])
-        path.closeSubpath()
+        // The box: a frame with iOS's rounded (continuous) corners, and one slit in the left side just below the
+        // top corner. The path is filled even-odd, so the inner shape and the slit become gaps in the frame.
+        path.addRoundedRect(in: r(x0, y0, x1 - x0, y1 - y0), cornerSize: CGSize(width: corner * k, height: corner * k),
+                            style: .continuous)
+        path.addRoundedRect(in: r(x0 + s, y0 + s, x1 - x0 - 2 * s, y1 - y0 - 2 * s),
+                            cornerSize: CGSize(width: (corner - s) * k, height: (corner - s) * k), style: .continuous)
+        path.addRect(r(x0, y0 + corner, s, slit))
 
         // T: the top bar, and the stem cut off below it.
         path.addRect(r(0, 0, tWidth, s))

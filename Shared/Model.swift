@@ -86,9 +86,11 @@ struct TodoList: Codable, Hashable, Identifiable {
         ((name?.isEmpty ?? true) ? "To do" : name!).uppercased()
     }
 
-    /// The block of to-dos a widget or the card shows when they don't all fit in `columns` columns of `height`:
-    /// ticked ones stay where they are, and the next block appears once everything in this one is ticked.
-    func window(height: Double, columns: Int = 1, rowHeight: (TodoItem) -> Double) -> (start: Int, items: ArraySlice<TodoItem>) {
+    /// The block of to-dos a widget or the card shows when they don't all fit in `columns` columns of `height`
+    /// (the last column `reserve` shorter, leaving room for the countdown): ticked ones stay where they are, and the
+    /// next block appears once everything in this one is ticked.
+    func window(height: Double, columns: Int = 1, reserve: Double = 0,
+                rowHeight: (TodoItem) -> Double) -> (start: Int, items: ArraySlice<TodoItem>) {
         guard !items.isEmpty else { return (0, []) }
         let firstOpen = items.firstIndex(where: { !$0.done }) ?? (items.count - 1)
         var pageStart = 0
@@ -96,7 +98,8 @@ struct TodoList: Codable, Hashable, Identifiable {
         var used = 0.0
         for (i, item) in items.enumerated() {
             let row = rowHeight(item)
-            if used + row > height, used > 0 {
+            let limit = column == columns - 1 ? height - reserve : height
+            if used + row > limit, used > 0 {
                 if column + 1 < columns {
                     column += 1
                 } else {
@@ -127,13 +130,15 @@ extension TodoList {
 }
 
 extension Collection where Element == TodoItem {
-    /// Splits to-dos into up to `count` columns of at most `height`, filling each column top to bottom.
-    func inColumns(_ count: Int, height: Double, rowHeight: (TodoItem) -> Double) -> [[TodoItem]] {
+    /// Splits to-dos into up to `count` columns of at most `height` (the last one `reserve` shorter), filling each
+    /// column top to bottom.
+    func inColumns(_ count: Int, height: Double, reserve: Double = 0, rowHeight: (TodoItem) -> Double) -> [[TodoItem]] {
         var columns: [[TodoItem]] = [[]]
         var used = 0.0
         for item in self {
             let row = rowHeight(item)
-            if used + row > height, used > 0, columns.count < count {
+            let limit = columns.count == count ? height - reserve : height
+            if used + row > limit, used > 0, columns.count < count {
                 columns.append([])
                 used = 0
             }
@@ -219,6 +224,8 @@ struct TodoSettings: Codable, Hashable {
     var widgetColumns = 1
     /// "resets in 2 hrs, 13 min" on the card and the widgets.
     var showCountdown = true
+    /// The small explanations under sections in the app (off: the owner found them wordy).
+    var showTips = false
     /// The daily reset, in minutes after midnight (0 = midnight): new lists end then unless told otherwise.
     var resetMinutes = 0
     var planReminder = false
@@ -237,6 +244,7 @@ struct TodoSettings: Codable, Hashable {
         card = (try? c.decodeIfPresent(CardSettings.self, forKey: .card)) ?? d.card
         widgetColumns = try c.decodeIfPresent(Int.self, forKey: .widgetColumns) ?? d.widgetColumns
         showCountdown = try c.decodeIfPresent(Bool.self, forKey: .showCountdown) ?? d.showCountdown
+        showTips = try c.decodeIfPresent(Bool.self, forKey: .showTips) ?? d.showTips
         resetMinutes = try c.decodeIfPresent(Int.self, forKey: .resetMinutes) ?? d.resetMinutes
         planReminder = try c.decodeIfPresent(Bool.self, forKey: .planReminder) ?? d.planReminder
         planMinutes = try c.decodeIfPresent(Int.self, forKey: .planMinutes) ?? d.planMinutes

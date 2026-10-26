@@ -106,7 +106,10 @@ struct HomeScreenWidget: View {
                     let narrow = geo.size.width < 200
                     let columns = narrow ? 1 : entry.data.settings.widgetColumns
                     let height = Double(geo.size.height) - headerHeight
-                    let window = list.window(height: height, columns: columns, rowHeight: rowHeight)
+                    // The countdown gets its own line under the last column.
+                    let reserve = timerShown ? CardLayout.timerHeight : 0
+                    let window = list.window(height: height, columns: columns, reserve: reserve, rowHeight: rowHeight)
+                    let split = window.items.inColumns(columns, height: height, reserve: reserve, rowHeight: rowHeight)
                     header(list, window: window, narrow: narrow)
                     if list.items.isEmpty {
                         Text("Nothing on this list yet")
@@ -114,7 +117,7 @@ struct HomeScreenWidget: View {
                             .foregroundStyle(.secondary)
                     }
                     HStack(alignment: .top, spacing: 10) {
-                        ForEach(Array(window.items.inColumns(columns, height: height, rowHeight: rowHeight).enumerated()), id: \.offset) { _, column in
+                        ForEach(Array(split.enumerated()), id: \.offset) { _, column in
                             VStack(alignment: .leading, spacing: 0) {
                                 ForEach(column) { item in
                                     let itemLook = look.applied(to: item)
@@ -149,17 +152,22 @@ struct HomeScreenWidget: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .overlay(alignment: .bottomTrailing) {
-            // Centred on a row's line at the bottom, inside the same margins as the to-dos.
-            if let end = entry.list?.end, entry.data.settings.showCountdown {
+            // Bottom right, inside the same margins as the to-dos, on the line kept free for it.
+            if let end = entry.list?.end, timerShown {
                 Countdown(end: end)
-                    .font(.system(size: 14))
+                    .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(0.72))
-                    .frame(maxWidth: 140, alignment: .trailing)
-                    .frame(height: entry.data.settings.text.row)
+                    .lineLimit(1)
+                    .frame(maxWidth: 200, alignment: .trailing)
+                    .frame(height: CardLayout.timerHeight)
                     .padding(.trailing, 14)
                     .padding(.bottom, 12)
             }
         }
+    }
+
+    private var timerShown: Bool {
+        entry.list?.end != nil && entry.data.settings.showCountdown
     }
 
     /// "TO DO" in its box, and which to-dos are showing when they don't all fit.

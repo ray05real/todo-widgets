@@ -54,18 +54,20 @@ struct TodoLiveActivity: Widget {
 /// The card's background for each look. The brightness slider runs from -0.25 (darker) to 0.25 (lighter) in 11
 /// steps, remembered separately for each look:
 /// - Glass: see-through black; the middle is about as dark as iOS 26's notifications, the lightest step clear.
-/// - White: paper white at the lightest step, letting more of the wallpaper through as it goes darker.
-/// - Black: solid black at the darkest step, letting more of the wallpaper through as it goes lighter.
+/// - White: paper white at the lightest step, down to 40% (much of the wallpaper showing) at the darkest.
+/// - Black: solid black at the darkest step, down to 40% at the lightest.
+/// (White and Black first ran 70–100%, which looked the same on the phone at every step.)
 enum CardTint {
     static func color(for card: CardSettings) -> Color {
         let step = min(max(card.currentShade / 0.25, -1), 1)   // -1 darkest … 0 middle … 1 lightest
+        let toLight = (step + 1) / 2                            // 0 darkest … 1 lightest
         switch card.style {
         case .standard:
             return Color.black.opacity(0.32 - step * 0.32)
         case .white:
-            return Color.white.opacity(0.85 + step * 0.15)
+            return Color.white.opacity(0.4 + toLight * 0.6)
         case .black:
-            return Color.black.opacity(0.85 - step * 0.15)
+            return Color.black.opacity(1 - toLight * 0.6)
         }
     }
 }
@@ -75,9 +77,15 @@ struct Countdown: View {
     let end: Date
 
     var body: some View {
-        Text(end, style: .relative)
-            .monospacedDigit()
-            .multilineTextAlignment(.trailing)
+        // Hours and minutes (or days and hours), no seconds: Apple's older countdown style showed
+        // "58 min, 38 secs" in the last hour, ticking every second.
+        if #available(iOS 18.0, *) {
+            Text(.currentDate, format: .offset(to: end, allowedFields: [.day, .hour, .minute], maxFieldCount: 2, sign: .never))
+                .multilineTextAlignment(.trailing)
+        } else {
+            Text(end, style: .relative)
+                .multilineTextAlignment(.trailing)
+        }
     }
 }
 
@@ -99,19 +107,21 @@ struct TitleBadge: View {
     }
 }
 
-/// The card's tick rows: as many of the card's to-dos as fit in `height`, in one or two columns.
+/// The card's tick rows: as many of the card's to-dos as fit in `height`, in one or two columns, the last column
+/// `reserve` shorter so the countdown has its own line under it.
 struct CardRows: View {
     let state: TodoActivityAttributes.ContentState
     let height: Double
     let source: String
+    var reserve = 0.0
 
     var body: some View {
         let rowHeight = { (item: TodoItem) in state.look.applied(to: item).cardRow }
         let shown = TodoList(id: state.listID ?? "", start: .now, items: state.items)
-            .window(height: height, columns: state.card.columns, rowHeight: rowHeight)
-        let columns = shown.items.inColumns(state.card.columns, height: height, rowHeight: rowHeight)
+            .window(height: height, columns: state.card.columns, reserve: reserve, rowHeight: rowHeight)
+        let columns = shown.items.inColumns(state.card.columns, height: height, reserve: reserve, rowHeight: rowHeight)
         HStack(alignment: .top, spacing: 10) {
-            ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
+            ForEach(Array(columns.enumerated()), id: \.offset) { index, column in
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(column) { item in
                         let look = state.look.applied(to: item)
@@ -122,6 +132,7 @@ struct CardRows: View {
                         .frame(height: look.cardRow)
                     }
                 }
+                .padding(.bottom, index == columns.count - 1 ? reserve : 0)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -130,6 +141,10 @@ struct CardRows: View {
 
 struct LockScreenCard: View {
     let context: ActivityViewContext<TodoActivityAttributes>
+
+    private var timerShown: Bool {
+        context.state.end != nil && context.state.showCountdown && !context.isStale && !context.state.items.isEmpty
+    }
 
     var body: some View {
         let state = context.state
@@ -160,21 +175,23 @@ struct LockScreenCard: View {
                     .foregroundStyle(.secondary)
                     .padding(.top, 6)
             } else {
-                CardRows(state: state, height: CardLayout.rowsHeight, source: "Lock Screen card")
+                CardRows(state: state, height: CardLayout.rowsHeight, source: "Lock Screen card",
+                         reserve: timerShown ? CardLayout.timerHeight : 0)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
         .overlay(alignment: .bottomTrailing) {
-            // Centred on the last row's line, inside the same margins as the to-dos; the size and brightness of a
-            // notification's "6m ago".
-            if let end = state.end, state.showCountdown, !context.isStale {
+            // On its own line under the last column, inside the same margins as the to-dos; the size and brightness
+            // of a notification's "6m ago" (11 looked too small and faint, 15 too big).
+            if let end = state.end, timerShown {
                 Countdown(end: end)
-                    .font(.system(size: 15))
+                    .font(.system(size: 13))
                     .foregroundStyle(Color.primary.opacity(0.72))
-                    .frame(maxWidth: 150, alignment: .trailing)
-                    .frame(height: state.look.cardRow)
+                    .lineLimit(1)
+                    .frame(maxWidth: 200, alignment: .trailing)
+                    .frame(height: CardLayout.timerHeight)
                     .padding(.trailing, 14)
                     .padding(.bottom, 7)
             }

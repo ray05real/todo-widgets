@@ -58,7 +58,7 @@ struct ListScreen: View {
                 }
             } footer: {
                 if !list.items.isEmpty {
-                    Text("Tap a to-do to tick it. Swipe right (or hold it) to change its colour, font or size.")
+                    Tip("Tap to tick. Swipe right to edit.")
                 }
             }
 
@@ -105,7 +105,7 @@ struct ListScreen: View {
                 } header: {
                     Text("Not finished last time")
                 } footer: {
-                    Text("Tap + to bring one over, or × to leave it behind.")
+                    Tip("+ brings it over, × leaves it behind.")
                 }
             }
         }

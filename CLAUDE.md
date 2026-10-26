@@ -57,7 +57,9 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   bottom right. The ↻ renew button was removed (it confused the owner; the card renews itself).
 - Switches: card on/off, the count in the Dynamic Island on/off (empty compact views), countdown.
 - "Not finished last time" sits below the Add box.
-- App icon: "To Do" in a box, one slit per shape (box, T, D) like Revolut's R, white-on-black (inverted from black-on-white, owner 26 Oct), shaded with a darker rim (drawn
+- Tips (section footers) are off by default (Settings → Show tips); the owner found them wordy.
+- The countdown uses SystemFormatStyle.DateOffset (no seconds) on its own line under the last column, size 13.
+- App icon and in-app logo: "To Do" in a box with rounded (continuous) corners, one slit per shape (box, T, D) like Revolut's R, white-on-black (inverted from black-on-white, owner 26 Oct), shaded with a darker rim (drawn
   with System.Drawing in PowerShell; see git history for the drawing code).
 
 ## Status

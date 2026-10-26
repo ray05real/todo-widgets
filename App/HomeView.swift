@@ -15,28 +15,12 @@ struct HomeView: View {
             }
             .navigationTitle("To-do")
             .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .top) {
-                // The logo in white at the top left, level with the settings button on the right.
-                HStack(spacing: 12) {
-                    Logo()
-                        .frame(height: 34)
-                    Spacer()
-                    NavigationLink {
-                        SettingsView()
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(.primary)
-                            .frame(width: 40, height: 40)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
-                .background(Color(.systemGroupedBackground))
-            }
             .navigationDestination(for: String.self) { id in
-                ListScreen(listID: id)
+                if id == Self.settingsRoute {
+                    SettingsView()
+                } else {
+                    ListScreen(listID: id)
+                }
             }
         }
         .sheet(isPresented: $showNew) {
@@ -57,10 +41,36 @@ struct HomeView: View {
         }
     }
 
+    /// The navigation value that opens Settings (list ids are UUIDs, so they can't clash with it).
+    private static let settingsRoute = "settings"
+
     private func lists(at now: Date) -> some View {
         let running = model.data.running(at: now)
         let planned = model.data.planned(after: now)
         return List {
+            // The logo in white on the left and the settings button on the right, in a bare row so both line up
+            // exactly with the edges of the lists below.
+            Section {
+                HStack(spacing: 12) {
+                    Logo()
+                        .frame(height: 34)
+                    Spacer()
+                    Button {
+                        path.append(Self.settingsRoute)
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .frame(width: 40, height: 40)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Settings")
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+
             if running.isEmpty {
                 Section {
                     Button {
@@ -70,7 +80,7 @@ struct HomeView: View {
                             .font(.headline)
                     }
                 } footer: {
-                    Text("No list is running right now.")
+                    Tip("No list is running right now.")
                 }
             } else {
                 Section {
@@ -87,7 +97,7 @@ struct HomeView: View {
                     Text("Now")
                 } footer: {
                     if running.count > 1 {
-                        Text("Hold a list and drag it to reorder. 🔒 = on the Lock Screen. The To-do widget shows the top list; the \"2nd list\" and \"3rd list\" widgets show the next ones.")
+                        Tip("Hold and drag to reorder. 🔒 = on the Lock Screen.")
                     }
                 }
             }
@@ -112,7 +122,7 @@ struct HomeView: View {
                     Label("New list…", systemImage: "plus")
                 }
             } footer: {
-                Text("Plan the next list ahead and it takes over when this one ends.")
+                Tip("A planned list takes over when this one ends.")
             }
         }
     }

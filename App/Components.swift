@@ -1,5 +1,21 @@
 import SwiftUI
 
+/// A small explanation under a section, shown only with Settings → Show tips on.
+struct Tip: View {
+    @EnvironmentObject private var model: AppModel
+    let text: String
+
+    init(_ text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        if model.data.settings.showTips {
+            Text(text)
+        }
+    }
+}
+
 /// "Ends in 5 hr, 32 min" (counting down live), "Starts Tue 00:00", "Ended" or "No end".
 struct TimeLabel: View {
     let list: TodoList
@@ -134,7 +150,7 @@ struct ItemEditor: View {
                 } header: {
                     Text("Size")
                 } footer: {
-                    Text("Otherwise it uses the size in Settings.")
+                    Tip("Otherwise it uses the size in Settings.")
                 }
                 Section {
                     Button("Delete to-do", role: .destructive) {
