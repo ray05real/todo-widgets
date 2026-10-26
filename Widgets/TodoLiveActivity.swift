@@ -6,59 +6,82 @@ import WidgetKit
 struct TodoLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TodoActivityAttributes.self) { context in
-            // Any background tint turns Apple's frosted glass off, so it's only set for the see-through look.
-            if context.state.card.seeThrough {
+            // Any background tint turns Apple's own card glass off, so it's only set for the other looks.
+            if context.state.card.style == .standard {
                 LockScreenCard(context: context)
-                    .activityBackgroundTint(Color.clear)
             } else {
                 LockScreenCard(context: context)
+                    .activityBackgroundTint(Color.clear)
             }
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label(context.state.title, systemImage: "checklist")
+                    Text(context.state.title)
                         .font(.headline)
                         .lineLimit(1)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if let end = context.state.end, !context.isStale {
-                        Text(end, style: .relative)
+                    if let end = context.state.end, context.state.showCountdown, !context.isStale {
+                        Countdown(end: end)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.trailing)
                     }
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     CardRows(state: context.state, height: CardLayout.islandHeight, source: "Dynamic Island")
                 }
             } compactLeading: {
-                Image(systemName: "checklist").foregroundStyle(Color.green)
+                if context.state.card.showInIsland {
+                    Image(systemName: "checklist").foregroundStyle(Color.green)
+                }
             } compactTrailing: {
-                Text("\(context.state.left)").foregroundStyle(Color.green)
+                if context.state.card.showInIsland {
+                    Text("\(context.state.left)").foregroundStyle(Color.green)
+                }
             } minimal: {
-                Text("\(context.state.left)").foregroundStyle(Color.green)
+                if context.state.card.showInIsland {
+                    Text("\(context.state.left)").foregroundStyle(Color.green)
+                }
             }
         }
     }
 }
 
-/// The card's tick rows: as many of the card's to-dos as fit in `height`.
+/// "resets in 2 hrs, 13 min", counting down by itself.
+struct Countdown: View {
+    let end: Date
+
+    var body: some View {
+        (Text("resets in ") + Text(end, style: .relative))
+            .monospacedDigit()
+            .multilineTextAlignment(.trailing)
+    }
+}
+
+/// The card's tick rows: as many of the card's to-dos as fit in `height`, in one or two columns.
 struct CardRows: View {
     let state: TodoActivityAttributes.ContentState
     let height: Double
     let source: String
 
     var body: some View {
+        let rowHeight = { (item: TodoItem) in state.look.applied(to: item).cardRow }
         let shown = TodoList(id: state.listID ?? "", start: .now, items: state.items)
-            .window(height: height) { state.look.applied(to: $0).cardRow }
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(shown.items) { item in
-                let look = state.look.applied(to: item)
-                Toggle(isOn: item.done, intent: ToggleItemIntent(listID: state.listID ?? "", itemID: item.id, source: source)) {
-                    Text(item.title)
+            .window(height: height, columns: state.card.columns, rowHeight: rowHeight)
+        let columns = shown.items.inColumns(state.card.columns, height: height, rowHeight: rowHeight)
+        HStack(alignment: .top, spacing: 10) {
+            ForEach(Array(columns.enumerated()), id: \.offset) { _, column in
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(column) { item in
+                        let look = state.look.applied(to: item)
+                        Toggle(isOn: item.done, intent: ToggleItemIntent(listID: state.listID ?? "", itemID: item.id, source: source)) {
+                            Text(item.title)
+                        }
+                        .toggleStyle(CheckToggleStyle(look: look, color: item.color))
+                        .frame(height: look.cardRow)
+                    }
                 }
-                .toggleStyle(CheckToggleStyle(look: look, color: item.color))
-                .frame(height: look.cardRow)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
@@ -71,7 +94,6 @@ struct LockScreenCard: View {
         let state = context.state
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 5) {
-                Image(systemName: "checklist")
                 Text(state.title)
                     .fontWeight(.semibold)
                     .foregroundStyle(.primary)
@@ -79,17 +101,16 @@ struct LockScreenCard: View {
                     Text("\(state.first + 1)–\(state.first + state.items.count) of \(state.total)")
                 }
                 Spacer(minLength: 6)
-                if let end = state.end, !context.isStale {
-                    Image(systemName: "hourglass")
-                    Text(end, style: .relative)
-                        .monospacedDigit()
-                        .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: 96, alignment: .trailing)
+                if let end = state.end, state.showCountdown, !context.isStale {
+                    Countdown(end: end)
+                        .frame(maxWidth: 170, alignment: .trailing)
                 }
-                Button(intent: RenewCardIntent()) {
-                    Image(systemName: "arrow.clockwise")
+                if state.card.showRenew {
+                    Button(intent: RenewCardIntent()) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .font(.system(size: 12))
             .foregroundStyle(.secondary)
@@ -98,7 +119,7 @@ struct LockScreenCard: View {
 
             if context.isStale || state.listID == nil {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(state.nextReady ? "Your next list is ready" : (state.listID == nil ? "No list right now" : "\(state.title) has ended"))
+                    Text(state.nextReady ? "Your next list is ready" : (state.listID == nil ? "No list right now" : "This list has ended"))
                         .font(.system(size: 17, weight: .semibold))
                     Text(state.nextReady ? "Tap to show it here." : "Tap to make your next list.")
                         .font(.system(size: 13))
@@ -117,12 +138,24 @@ struct LockScreenCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 9)
-        .background(shade)
+        .background { CardBackground(card: state.card) }
     }
+}
 
-    /// A light or dark wash over the card (Settings → Lock Screen card → Brightness).
-    private var shade: Color {
-        let amount = context.state.card.shade
-        return amount >= 0 ? Color.white.opacity(amount) : Color.black.opacity(-amount)
+/// Behind the card: iOS 26's Liquid Glass for the glass looks, then the light or dark wash.
+struct CardBackground: View {
+    let card: CardSettings
+
+    var body: some View {
+        ZStack {
+            if card.style == .glass || card.style == .clearGlass {
+                if #available(iOS 26.0, *) {
+                    Rectangle()
+                        .fill(Color.clear)
+                        .glassEffect(card.style == .glass ? .regular : .clear, in: Rectangle())
+                }
+            }
+            card.shade >= 0 ? Color.white.opacity(card.shade) : Color.black.opacity(-card.shade)
+        }
     }
 }

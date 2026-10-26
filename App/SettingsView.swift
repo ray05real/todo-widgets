@@ -42,7 +42,22 @@ struct SettingsView: View {
             }
 
             Section {
-                Toggle("Keep the card on the Lock Screen", isOn: $model.data.settings.keepCard)
+                Toggle("Show the card on the Lock Screen", isOn: $model.data.settings.keepCard)
+                Toggle("Show it in the Dynamic Island", isOn: $model.data.settings.card.showInIsland)
+                Toggle("Show the countdown (resets in…)", isOn: $model.data.settings.showCountdown)
+                Toggle("Show the renew button (↻)", isOn: $model.data.settings.card.showRenew)
+            } header: {
+                Text("Where it shows")
+            } footer: {
+                Text("Home Screen and Lock Screen widgets are added and removed on those screens: press and hold, then Edit (or Remove). Apple doesn't let apps do that for you. The countdown shows how long until the list resets and a new one starts.")
+            }
+
+            Section {
+                Picker("Look", selection: $model.data.settings.card.style) {
+                    ForEach(CardStyle.allCases) { style in
+                        Text(style.label).tag(style)
+                    }
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Brightness")
                     HStack(spacing: 12) {
@@ -51,7 +66,11 @@ struct SettingsView: View {
                         Image(systemName: "sun.max.fill").foregroundStyle(.secondary)
                     }
                 }
-                Toggle("See-through (no frosted glass)", isOn: $model.data.settings.card.seeThrough)
+                Picker("Columns", selection: $model.data.settings.card.columns) {
+                    Text("1").tag(1)
+                    Text("2").tag(2)
+                }
+                .pickerStyle(.segmented)
                 Toggle("Its own text size", isOn: Binding(
                     get: { model.data.settings.card.size != nil },
                     set: { model.data.settings.card.size = $0 ? 14 : nil }
@@ -66,7 +85,19 @@ struct SettingsView: View {
             } header: {
                 Text("Lock Screen card")
             } footer: {
-                Text("Lock the phone to see changes. Apple keeps the card to a fixed height (about a fifth of the screen), so smaller text fits more to-dos: about 4 at 17, 5 at 14, 6 at 12. Apple also removes a card 8 hours after it appears, so it renews itself whenever you tick something or open the app.")
+                Text("Lock the phone to see changes. \"Glass\" and \"Clear glass\" are what iOS 26's notifications are made of; \"Apple's card\" is the darker glass Apple gives these cards. Apple fixes the card's height (about a fifth of the screen): 2 columns or smaller text fit more to-dos (about 6 a column at size 12). It renews itself whenever you tick something or open the app, because Apple removes a card after 8 hours.")
+            }
+
+            Section {
+                Picker("Columns", selection: $model.data.settings.widgetColumns) {
+                    Text("1").tag(1)
+                    Text("2").tag(2)
+                }
+                .pickerStyle(.segmented)
+            } header: {
+                Text("Home Screen widget")
+            } footer: {
+                Text("The large widget is the biggest Apple allows (about two-thirds of the Home Screen). Small widgets always have one column.")
             }
 
             Section("Test report") {

@@ -17,6 +17,7 @@ struct TodoActivityAttributes: ActivityAttributes {
         /// The font and size of to-dos without their own.
         var look: TextLook
         var card: CardSettings
+        var showCountdown: Bool
         /// Whether a planned list takes over when this one ends.
         var nextReady: Bool
     }

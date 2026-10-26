@@ -33,10 +33,20 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - Rows were too small to hit: bigger text (default 17) and taller rows that grow with the text.
 - Font, font size and colour, like Word: a default in Settings, and per to-do (Edit).
 - Any number of lists. Each has a start and a length (until the daily reset time, 4 h, 12 h, 24 h, 3 days, a picked
-  end, or no end) and a countdown (hourglass) in the corner. Lists can be planned ahead; a planned list takes over
+  end, or no end) and a countdown ("resets in 2 hrs, 13 min"; the hourglass alone confused the owner) in the corner.
+  The card and widgets title a daily list "TO DO:" (a named one "SHOPPING:"). Lists can be planned ahead; a planned list takes over
   when the current one ends. Widgets follow the current list or a named one (Edit Widget).
 - Unfinished to-dos are **not** carried over automatically: they're offered at the top of the next list (+ / ×).
 - A notification when a list ends; an optional daily "plan your next list" reminder.
+
+## The Lock Screen card (owner's notes, 26 Oct 2026)
+- Apple's Live Activity glass is darker than iOS 26 notifications and apps can't use the notification material, so
+  Settings offers looks to try on the phone: Apple's card, Glass / Clear glass (SwiftUI `glassEffect`, untested in a
+  Live Activity), See-through, plus a brightness wash. Find which one matches, then make it the default.
+- Apple caps the card at 160 points tall: it can't be made bigger. 2 columns or smaller text fit more.
+- Switches: card on/off, Dynamic Island on/off (empty compact views), countdown, renew button (off by default).
+- App icon: "To Do" in a box, one slit per shape (box, T, D) like Revolut's R, dark shaded with a light rim (drawn
+  with System.Drawing in PowerShell; see git history for the drawing code).
 
 ## Status
 - 26 Oct 2026: test build worked on the iPhone (widgets, card, Dynamic Island ticks). Second build adds the choices

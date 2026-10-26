@@ -79,18 +79,30 @@ struct TodoList: Codable, Hashable, Identifiable {
         return start.formatted(.dateTime.weekday(.wide).day().month())
     }
 
-    /// The block of to-dos a widget or the card shows when they don't all fit in `height`: ticked ones stay where
-    /// they are, and the next block appears once everything in this one is ticked.
-    func window(height: Double, rowHeight: (TodoItem) -> Double) -> (start: Int, items: ArraySlice<TodoItem>) {
+    /// "TO DO:" for the daily lists, else the list's name the same way ("SHOPPING:"), for the card and widgets.
+    var headerTitle: String {
+        let title = (name?.isEmpty ?? true) ? "To do" : name!
+        return title.uppercased() + ":"
+    }
+
+    /// The block of to-dos a widget or the card shows when they don't all fit in `columns` columns of `height`:
+    /// ticked ones stay where they are, and the next block appears once everything in this one is ticked.
+    func window(height: Double, columns: Int = 1, rowHeight: (TodoItem) -> Double) -> (start: Int, items: ArraySlice<TodoItem>) {
         guard !items.isEmpty else { return (0, []) }
         let firstOpen = items.firstIndex(where: { !$0.done }) ?? (items.count - 1)
         var pageStart = 0
+        var column = 0
         var used = 0.0
         for (i, item) in items.enumerated() {
             let row = rowHeight(item)
-            if used + row > height, i > pageStart {
-                if firstOpen < i { return (pageStart, items[pageStart..<i]) }
-                pageStart = i
+            if used + row > height, used > 0 {
+                if column + 1 < columns {
+                    column += 1
+                } else {
+                    if firstOpen < i { return (pageStart, items[pageStart..<i]) }
+                    pageStart = i
+                    column = 0
+                }
                 used = 0
             }
             used += row
@@ -99,20 +111,79 @@ struct TodoList: Codable, Hashable, Identifiable {
     }
 }
 
-/// How the Lock Screen card looks.
+extension Collection where Element == TodoItem {
+    /// Splits to-dos into up to `count` columns of at most `height`, filling each column top to bottom.
+    func inColumns(_ count: Int, height: Double, rowHeight: (TodoItem) -> Double) -> [[TodoItem]] {
+        var columns: [[TodoItem]] = [[]]
+        var used = 0.0
+        for item in self {
+            let row = rowHeight(item)
+            if used + row > height, used > 0, columns.count < count {
+                columns.append([])
+                used = 0
+            }
+            columns[columns.count - 1].append(item)
+            used += row
+        }
+        return columns
+    }
+}
+
+/// The Lock Screen card's background.
+enum CardStyle: String, Codable, CaseIterable, Identifiable {
+    /// Apple's own Live Activity glass (darker than notifications).
+    case standard
+    /// iOS 26's Liquid Glass, the material notifications are made of ("Clear" is the more see-through kind).
+    case glass, clearGlass
+    /// No glass at all: the wallpaper shows straight through.
+    case seeThrough
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .standard: return "Apple's card"
+        case .glass: return "Glass"
+        case .clearGlass: return "Clear glass"
+        case .seeThrough: return "See-through"
+        }
+    }
+}
+
+/// How the Lock Screen card (and its Dynamic Island versions) look.
 struct CardSettings: Codable, Hashable {
-    /// Lighter (above 0) or darker (below 0) than Apple's standard frosted glass, which is darker than notifications.
+    var style = CardStyle.standard
+    /// A light (above 0) or dark (below 0) wash over the background.
     var shade = 0.15
-    /// No frosted glass at all: the wallpaper shows straight through.
-    var seeThrough = false
     /// The card's own text size (nil = the same as the lists). Smaller fits more to-dos on the card.
     var size: Double?
+    /// Two columns fit twice as many short to-dos on the card.
+    var columns = 1
+    var showInIsland = true
+    var showRenew = false
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = CardSettings()
+        style = (try? c.decodeIfPresent(CardStyle.self, forKey: .style)) ?? d.style
+        shade = try c.decodeIfPresent(Double.self, forKey: .shade) ?? d.shade
+        size = try c.decodeIfPresent(Double.self, forKey: .size)
+        columns = try c.decodeIfPresent(Int.self, forKey: .columns) ?? d.columns
+        showInIsland = try c.decodeIfPresent(Bool.self, forKey: .showInIsland) ?? d.showInIsland
+        showRenew = try c.decodeIfPresent(Bool.self, forKey: .showRenew) ?? d.showRenew
+    }
 }
 
 struct TodoSettings: Codable, Hashable {
     /// The font and size of every to-do that doesn't have its own.
     var text = TextLook()
     var card = CardSettings()
+    /// Columns on the Home Screen widgets (small widgets always have one).
+    var widgetColumns = 1
+    /// "resets in 2 hrs, 13 min" on the card and the widgets.
+    var showCountdown = true
     /// The daily reset, in minutes after midnight (0 = midnight): new lists end then unless told otherwise.
     var resetMinutes = 0
     var planReminder = false
@@ -126,6 +197,8 @@ struct TodoSettings: Codable, Hashable {
         let d = TodoSettings()
         text = (try? c.decodeIfPresent(TextLook.self, forKey: .text)) ?? d.text
         card = (try? c.decodeIfPresent(CardSettings.self, forKey: .card)) ?? d.card
+        widgetColumns = try c.decodeIfPresent(Int.self, forKey: .widgetColumns) ?? d.widgetColumns
+        showCountdown = try c.decodeIfPresent(Bool.self, forKey: .showCountdown) ?? d.showCountdown
         resetMinutes = try c.decodeIfPresent(Int.self, forKey: .resetMinutes) ?? d.resetMinutes
         planReminder = try c.decodeIfPresent(Bool.self, forKey: .planReminder) ?? d.planReminder
         planMinutes = try c.decodeIfPresent(Int.self, forKey: .planMinutes) ?? d.planMinutes

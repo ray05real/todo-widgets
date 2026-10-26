@@ -64,23 +64,34 @@ struct HomeScreenWidget: View {
 
     var body: some View {
         let look = entry.data.settings.text
+        let rowHeight = { (item: TodoItem) in look.applied(to: item).row }
         GeometryReader { geo in
             VStack(alignment: .leading, spacing: 0) {
                 if let list = entry.list {
-                    let window = list.window(height: Double(geo.size.height) - headerHeight) { look.applied(to: $0).row }
-                    header(list, window: window, narrow: geo.size.width < 200)
+                    let narrow = geo.size.width < 200
+                    let columns = narrow ? 1 : entry.data.settings.widgetColumns
+                    let height = Double(geo.size.height) - headerHeight
+                    let window = list.window(height: height, columns: columns, rowHeight: rowHeight)
+                    header(list, window: window, narrow: narrow)
                     if list.items.isEmpty {
                         Text("Nothing on this list yet")
                             .font(look.swiftUIFont)
                             .foregroundStyle(.secondary)
                     }
-                    ForEach(window.items) { item in
-                        let itemLook = look.applied(to: item)
-                        Toggle(isOn: item.done, intent: ToggleItemIntent(listID: list.id, itemID: item.id, source: "Home Screen widget")) {
-                            Text(item.title)
+                    HStack(alignment: .top, spacing: 10) {
+                        ForEach(Array(window.items.inColumns(columns, height: height, rowHeight: rowHeight).enumerated()), id: \.offset) { _, column in
+                            VStack(alignment: .leading, spacing: 0) {
+                                ForEach(column) { item in
+                                    let itemLook = look.applied(to: item)
+                                    Toggle(isOn: item.done, intent: ToggleItemIntent(listID: list.id, itemID: item.id, source: "Home Screen widget")) {
+                                        Text(item.title)
+                                    }
+                                    .toggleStyle(CheckToggleStyle(look: itemLook, color: item.color))
+                                    .frame(height: itemLook.row)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .toggleStyle(CheckToggleStyle(look: itemLook, color: item.color))
-                        .frame(height: itemLook.row)
                     }
                 } else {
                     Text("No list right now")
@@ -96,10 +107,10 @@ struct HomeScreenWidget: View {
         .padding(.vertical, 12)
     }
 
-    /// The list's name on the left; on the right a countdown to when it ends (the hourglass).
+    /// "TO DO:" on the left; on the right how long until the list resets.
     private func header(_ list: TodoList, window: (start: Int, items: ArraySlice<TodoItem>), narrow: Bool) -> some View {
         HStack(spacing: 4) {
-            Text(list.displayName(at: entry.date))
+            Text(list.headerTitle)
                 .font(.system(size: 15, weight: .bold))
             if list.items.count > window.items.count, !narrow {
                 Text("\(window.start + 1)–\(window.start + window.items.count) of \(list.items.count)")
@@ -107,20 +118,16 @@ struct HomeScreenWidget: View {
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 4)
-            if let end = list.end {
-                Image(systemName: "hourglass")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
+            if let end = list.end, entry.data.settings.showCountdown {
                 if narrow {
-                    Text(end, format: .dateTime.hour().minute())
+                    (Text("until ") + Text(end, format: .dateTime.hour().minute()))
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 } else {
-                    Text(end, style: .relative)
-                        .font(.system(size: 11).monospacedDigit())
+                    Countdown(end: end)
+                        .font(.system(size: 11))
                         .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.trailing)
-                        .frame(maxWidth: 100, alignment: .trailing)
+                        .frame(maxWidth: 150, alignment: .trailing)
                 }
             }
         }

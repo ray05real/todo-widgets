@@ -40,21 +40,23 @@ enum LiveCard {
         let card = data.settings.card
         var look = data.settings.text
         if let size = card.size { look.size = size }
+        let countdown = data.settings.showCountdown
         guard let list = data.current(at: now) else {
             return TodoActivityAttributes.ContentState(
-                listID: nil, title: "No list right now", end: nil, items: [], first: 0, total: 0, left: 0,
-                look: look, card: card, nextReady: !data.planned(after: now).isEmpty
+                listID: nil, title: "TO DO:", end: nil, items: [], first: 0, total: 0, left: 0,
+                look: look, card: card, showCountdown: countdown, nextReady: !data.planned(after: now).isEmpty
             )
         }
-        let window = list.window(height: CardLayout.rowsHeight) { look.applied(to: $0).cardRow }
+        let window = list.window(height: CardLayout.rowsHeight, columns: card.columns) { look.applied(to: $0).cardRow }
         let items = window.items.map { (item: TodoItem) -> TodoItem in
             var short = item
             short.title = String(item.title.prefix(60))
             return short
         }
         return TodoActivityAttributes.ContentState(
-            listID: list.id, title: list.displayName(at: now), end: list.end, items: items, first: window.start,
-            total: list.items.count, left: list.leftCount, look: look, card: card, nextReady: data.next(after: list) != nil
+            listID: list.id, title: list.headerTitle, end: list.end, items: items, first: window.start,
+            total: list.items.count, left: list.leftCount, look: look, card: card, showCountdown: countdown,
+            nextReady: data.next(after: list) != nil
         )
     }
 
