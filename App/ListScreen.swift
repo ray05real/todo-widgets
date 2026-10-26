@@ -79,7 +79,7 @@ struct ListScreen: View {
                 Section {
                     ForEach(suggestions) { item in
                         HStack(spacing: 14) {
-                            Text(item.title)
+                            Text(look.display(item.title))
                                 .font(look.applied(to: item).swiftUIFont)
                                 .foregroundStyle(Palette.color(item.color))
                             Spacer()

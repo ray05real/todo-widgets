@@ -49,7 +49,7 @@ struct ItemRow: View {
                 Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: look.circle + 2))
                     .foregroundStyle(tint.opacity(item.done ? 0.55 : 0.9))
-                Text(item.title)
+                Text(look.display(item.title))
                     .font(look.swiftUIFont)
                     .strikethrough(item.done)
                     .foregroundStyle(tint.opacity(item.done ? 0.45 : 1))

@@ -6,10 +6,16 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
-                Text("Go for a run")
+                Text(model.data.settings.text.display("Go for a run"))
                     .font(model.data.settings.text.swiftUIFont)
                     .lineLimit(1)
                 SizeSlider(size: $model.data.settings.text.size)
+                Picker("Letters", selection: $model.data.settings.text.letterCase) {
+                    ForEach(LetterCase.allCases) { letterCase in
+                        Text(letterCase.label).tag(letterCase)
+                    }
+                }
+                .pickerStyle(.segmented)
                 FontChips(selection: Binding(
                     get: { model.data.settings.text.font },
                     set: { model.data.settings.text.font = $0 ?? .system }

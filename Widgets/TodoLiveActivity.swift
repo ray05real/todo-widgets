@@ -126,7 +126,7 @@ struct CardRows: View {
                     ForEach(column) { item in
                         let look = state.look.applied(to: item)
                         Toggle(isOn: item.done, intent: ToggleItemIntent(listID: state.listID ?? "", itemID: item.id, source: source)) {
-                            Text(item.title)
+                            Text(look.display(item.title))
                         }
                         .toggleStyle(CheckToggleStyle(look: look, color: item.color))
                         .frame(height: look.cardRow)

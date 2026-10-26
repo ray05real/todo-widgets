@@ -41,14 +41,55 @@ struct TodoItem: Codable, Hashable, Identifiable {
     ]
 }
 
-/// A font and a size.
+/// How to-dos' letters are shown (what you typed is kept as it is).
+enum LetterCase: String, Codable, CaseIterable, Identifiable {
+    case asTyped, capitalFirst, upper, lower
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .asTyped: return "As typed"
+        case .capitalFirst: return "Abc"
+        case .upper: return "ABC"
+        case .lower: return "abc"
+        }
+    }
+
+    func apply(_ text: String) -> String {
+        switch self {
+        case .asTyped: return text
+        case .capitalFirst: return text.prefix(1).uppercased() + text.dropFirst()
+        case .upper: return text.uppercased()
+        case .lower: return text.lowercased()
+        }
+    }
+}
+
+/// A font, a size and how the letters are shown.
 struct TextLook: Codable, Hashable {
     var font: FontChoice = .system
     var size: Double = 17
+    var letterCase: LetterCase = .asTyped
 
     /// This look with a to-do's own font and size, where it has them.
     func applied(to item: TodoItem) -> TextLook {
-        TextLook(font: item.font ?? font, size: item.size ?? size)
+        TextLook(font: item.font ?? font, size: item.size ?? size, letterCase: letterCase)
+    }
+
+    /// A to-do's words as they should appear.
+    func display(_ title: String) -> String {
+        letterCase.apply(title)
+    }
+}
+
+extension TextLook {
+    /// Looks saved before a field existed still load (in an extension, so the memberwise init stays).
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        font = (try? c.decodeIfPresent(FontChoice.self, forKey: .font)) ?? .system
+        size = try c.decodeIfPresent(Double.self, forKey: .size) ?? 17
+        letterCase = (try? c.decodeIfPresent(LetterCase.self, forKey: .letterCase)) ?? .asTyped
     }
 }
 
