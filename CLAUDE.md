@@ -44,7 +44,7 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   over a light one), while notifications stay dark, so it could never match. The card always sets its own tint
   (`CardTint`: see-through black, 0.32 at the slider's middle mark ≈ notifications, clear at the right end), or
   White (paper-white, dark text) or Black (white text); each look keeps its own brightness (CardSettings shade / whiteShade / blackShade). Glass / Clear glass (`glassEffect`) and See-through were tried and dropped.
-- The logo sits top left on the first screen, level with the settings button on the right.
+- The logo sits top left on the first screen, level with the settings button on the right, in a bar straight under the status bar (16 pt in, like the lists). Not as a list row: the section corners clipped it.
 - Lock Screen cards: "Top list only" (one card following the top list; attributes.listID nil) or "Every list" (a
   card per running list with showOnCard on; attributes.listID = the list). LiveCard.sync adds, updates, renews and
   removes cards to match. Widgets: "To-do" (top list), "To-do · 2nd list", "To-do · 3rd list" (by rank in the
@@ -59,7 +59,7 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - "Not finished last time" sits below the Add box.
 - Tips (section footers) are off by default (Settings → Show tips); the owner found them wordy.
 - The countdown uses SystemFormatStyle.DateOffset (no seconds) on its own line under the last column, size 13.
-- App icon and in-app logo: "To Do" in a box with rounded (continuous) corners, one slit per shape (box, T, D) like Revolut's R, white-on-black (inverted from black-on-white, owner 26 Oct), shaded with a darker rim (drawn
+- App icon and in-app logo: "To Do" in a box with rounded (continuous) corners and no slit (the owner removed it), one slit each in the T and D like Revolut's R, white-on-black (inverted from black-on-white, owner 26 Oct), shaded with a darker rim (drawn
   with System.Drawing in PowerShell; see git history for the drawing code).
 
 ## Status

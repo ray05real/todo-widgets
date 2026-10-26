@@ -15,6 +15,28 @@ struct HomeView: View {
             }
             .navigationTitle("To-do")
             .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                // The logo in white on the left and the settings button on the right, straight under the status
+                // bar, 16 points in like the lists. (Inside the list, the section's rounded corners cut the logo
+                // off and the section spacing left an empty band above it.)
+                HStack(spacing: 12) {
+                    Logo()
+                        .frame(height: 34)
+                    Spacer()
+                    NavigationLink(value: Self.settingsRoute) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .frame(width: 40, height: 40)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .accessibilityLabel("Settings")
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 2)
+                .padding(.bottom, 4)
+                .background(Color(.systemGroupedBackground))
+            }
             .navigationDestination(for: String.self) { id in
                 if id == Self.settingsRoute {
                     SettingsView()
@@ -48,29 +70,6 @@ struct HomeView: View {
         let running = model.data.running(at: now)
         let planned = model.data.planned(after: now)
         return List {
-            // The logo in white on the left and the settings button on the right, in a bare row so both line up
-            // exactly with the edges of the lists below.
-            Section {
-                HStack(spacing: 12) {
-                    Logo()
-                        .frame(height: 34)
-                    Spacer()
-                    Button {
-                        path.append(Self.settingsRoute)
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundStyle(.primary)
-                            .frame(width: 40, height: 40)
-                            .background(.ultraThinMaterial, in: Circle())
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel("Settings")
-                }
-                .listRowInsets(EdgeInsets())
-                .listRowBackground(Color.clear)
-            }
-
             if running.isEmpty {
                 Section {
                     Button {

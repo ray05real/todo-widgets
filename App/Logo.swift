@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The app's logo, drawn the same way as the icon: "To Do" in a box with rounded corners, with one slit each in the
-/// box, the T and the D (like Revolut's R). Units are the capital letters' height.
+/// T and the D (like Revolut's R). Units are the capital letters' height.
 struct LogoShape: Shape {
     private let stroke = 0.18
     private let slit = 0.085
@@ -30,13 +30,12 @@ struct LogoShape: Shape {
         let s = stroke
         var path = Path()
 
-        // The box: a frame with iOS's rounded (continuous) corners, and one slit in the left side just below the
-        // top corner. The path is filled even-odd, so the inner shape and the slit become gaps in the frame.
+        // The box: a plain frame with iOS's rounded (continuous) corners and no slit (the owner's choice). The path
+        // is filled even-odd, so the inner shape becomes the gap inside the frame.
         path.addRoundedRect(in: r(x0, y0, x1 - x0, y1 - y0), cornerSize: CGSize(width: corner * k, height: corner * k),
                             style: .continuous)
         path.addRoundedRect(in: r(x0 + s, y0 + s, x1 - x0 - 2 * s, y1 - y0 - 2 * s),
                             cornerSize: CGSize(width: (corner - s) * k, height: (corner - s) * k), style: .continuous)
-        path.addRect(r(x0, y0 + corner, s, slit))
 
         // T: the top bar, and the stem cut off below it.
         path.addRect(r(0, 0, tWidth, s))
