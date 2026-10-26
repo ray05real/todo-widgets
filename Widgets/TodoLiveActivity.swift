@@ -152,7 +152,8 @@ struct LockScreenCard: View {
             HStack(spacing: 6) {
                 TitleBadge(title: state.title)
                 if state.total > state.first + state.items.count {
-                    Text("+(state.total - state.first - state.items.count) more")
+                    // How many to-dos come after the ones on show (the ones before are all ticked).
+                    Text("+\(state.total - state.first - state.items.count) more")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }

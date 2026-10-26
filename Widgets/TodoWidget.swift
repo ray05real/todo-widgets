@@ -175,7 +175,8 @@ struct HomeScreenWidget: View {
         HStack(spacing: 6) {
             TitleBadge(title: list.headerTitle)
             if list.items.count > window.start + window.items.count, !narrow {
-                Text("+(list.items.count - window.start - window.items.count) more")
+                // How many to-dos come after the ones on show (the ones before are all ticked).
+                Text("+\(list.items.count - window.start - window.items.count) more")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
