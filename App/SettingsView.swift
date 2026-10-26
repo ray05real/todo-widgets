@@ -86,7 +86,7 @@ struct SettingsView: View {
             } header: {
                 Text("Lock Screen card")
             } footer: {
-                Text("Lock the phone to see changes. The middle mark is Apple's own glass. Apple fixes the card's height (about a fifth of the screen), so 2 columns or smaller text fit more: about 6 a column at size 12, 7 at 10, 8 at 9. Apple also removes a card after 8 hours; it puts itself back whenever you tick something or open the app.")
+                Text("Lock the phone to see changes. The middle mark is about as dark as your notifications; the right end is fully see-through. Apple fixes the card's height (about a fifth of the screen), so 2 columns or smaller text fit more: about 6 a column at size 12, 7 at 10, 8 at 9. Apple also removes a card after 8 hours; it puts itself back whenever you tick something or open the app.")
             }
 
             Section("Test report") {

@@ -6,7 +6,8 @@ import WidgetKit
 struct TodoLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TodoActivityAttributes.self) { context in
-            // Any background tint turns Apple's glass off, so it's only set for the white card.
+            // Apple's own card glass turns light or dark with the wallpaper behind it (cream over a light wallpaper,
+            // so it never matched the notifications), so the card always gets a tint of its own instead.
             if context.state.card.style == .white {
                 LockScreenCard(context: context)
                     .environment(\.colorScheme, .light)
@@ -14,6 +15,9 @@ struct TodoLiveActivity: Widget {
                     .activitySystemActionForegroundColor(Color.black)
             } else {
                 LockScreenCard(context: context)
+                    .environment(\.colorScheme, .dark)
+                    .activityBackgroundTint(CardTint.color(shade: context.state.card.shade))
+                    .activitySystemActionForegroundColor(Color.white)
             }
         } dynamicIsland: { context in
             DynamicIsland {
@@ -44,6 +48,17 @@ struct TodoLiveActivity: Widget {
                 }
             }
         }
+    }
+}
+
+/// The see-through dark tint behind the card. The brightness slider runs from -0.25 to 0.25 in 11 steps; the
+/// middle (0) is about as dark as iOS 26's notifications, the lightest step is fully see-through.
+enum CardTint {
+    static let middle = 0.32
+
+    static func color(shade: Double) -> Color {
+        let opacity = min(max(middle - shade * (middle / 0.25), 0), 0.85)
+        return Color.black.opacity(opacity)
     }
 }
 
@@ -143,7 +158,6 @@ struct LockScreenCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
-        .background(shade)
         .overlay(alignment: .bottomTrailing) {
             if let end = state.end, state.showCountdown, !context.isStale {
                 Countdown(end: end)
@@ -154,12 +168,5 @@ struct LockScreenCard: View {
                     .padding(.bottom, 3)
             }
         }
-    }
-
-    /// The light or dark wash over the glass (Settings → Lock Screen card → Brightness). None on the white card.
-    private var shade: Color {
-        let card = context.state.card
-        guard card.style == .standard else { return Color.clear }
-        return card.shade >= 0 ? Color.white.opacity(card.shade) : Color.black.opacity(-card.shade)
     }
 }

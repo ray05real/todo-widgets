@@ -40,9 +40,13 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - A notification when a list ends; an optional daily "plan your next list" reminder.
 
 ## The Lock Screen card (owner's notes, 26 Oct 2026)
-- Apple's Live Activity glass is darker than iOS 26 notifications and apps can't use the notification material.
-  Glass / Clear glass (SwiftUI `glassEffect`) and See-through looked the same on the phone, so they were dropped:
-  the looks are Glass (Apple's, with a brightness wash in 11 marked steps) and White (paper-white, dark text).
+- Apple's Live Activity glass turns light or dark with the wallpaper behind it (dark over a dark wallpaper, cream
+  over a light one), while notifications stay dark, so it could never match. The card now always sets its own tint
+  (`CardTint`: see-through black, 0.32 at the slider's middle mark ≈ notifications, clear at the right end), or
+  White (paper-white, dark text). Glass / Clear glass (`glassEffect`) and See-through were tried and dropped.
+- The Home Screen widget is a plain StaticConfiguration (kind "TodoListWidget") showing the top list: the
+  AppIntentConfiguration ("choose a list") version stayed a grey skeleton on the sideloaded app, even in the Add
+  Widget preview. Test widgets A and B (TestWidgets.swift) are still in for checking; remove once it works.
 - Apple caps the card at 160 points tall: it can't be made bigger. 2 columns or smaller text (down to 9) fit more.
 - "TO DO" sits top left in an outlined rounded box (no colon); the countdown ("2 hrs, 13 min", no "resets in")
   bottom right. The ↻ renew button was removed (it confused the owner; the card renews itself).

@@ -4,35 +4,37 @@ import WidgetKit
 struct TodoEntry: TimelineEntry {
     let date: Date
     let data: TodoData
-    let listName: String?
 
-    var list: TodoList? { data.list(named: listName, at: date) }
+    /// The top list in your order (drag to reorder in the app), like the Lock Screen card.
+    var list: TodoList? { data.current(at: date) }
 }
 
-struct TodoProvider: AppIntentTimelineProvider {
+struct TodoProvider: TimelineProvider {
     func placeholder(in context: Context) -> TodoEntry {
-        TodoEntry(date: .now, data: .sample, listName: nil)
+        TodoEntry(date: .now, data: .sample)
     }
 
-    func snapshot(for configuration: SelectListIntent, in context: Context) async -> TodoEntry {
-        TodoEntry(date: .now, data: context.isPreview ? .sample : TodoStore.loadData(), listName: configuration.listName)
+    func getSnapshot(in context: Context, completion: @escaping (TodoEntry) -> Void) {
+        completion(TodoEntry(date: .now, data: context.isPreview ? .sample : TodoStore.loadData()))
     }
 
-    func timeline(for configuration: SelectListIntent, in context: Context) async -> Timeline<TodoEntry> {
+    func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
         // One entry now and one for each moment a list starts or ends, so the widget switches lists on time.
         // Otherwise the app reloads the widgets whenever something changes.
         let data = TodoStore.loadData()
         let now = Date.now
         let dates = [now] + data.changes(after: now).prefix(20)
-        let entries = dates.map { TodoEntry(date: $0, data: data, listName: configuration.listName) }
-        return Timeline(entries: entries, policy: .never)
+        let entries = dates.map { TodoEntry(date: $0, data: data) }
+        completion(Timeline(entries: entries, policy: .never))
     }
 }
 
-/// The Home Screen widget (small, medium, large) and the small Lock Screen widget under the clock.
+/// The Home Screen widget (small, medium, large) and the small Lock Screen widget under the clock. A plain widget
+/// with no settings: the "choose a list" kind (AppIntentConfiguration) stayed a grey skeleton on the sideloaded app,
+/// even in the Add Widget preview. A new kind name, so iOS forgets the old one.
 struct TodoWidget: Widget {
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: "TodoWidget", intent: SelectListIntent.self, provider: TodoProvider()) { entry in
+        StaticConfiguration(kind: "TodoListWidget", provider: TodoProvider()) { entry in
             TodoWidgetView(entry: entry)
         }
         .configurationDisplayName("To-do")
