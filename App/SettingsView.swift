@@ -58,17 +58,16 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                if model.data.settings.card.style == .standard {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Brightness")
-                        HStack(spacing: 12) {
-                            Image(systemName: "moon.fill").foregroundStyle(.secondary)
-                            VStack(spacing: 2) {
-                                Slider(value: $model.data.settings.card.shade, in: -0.25...0.25, step: 0.05)
-                                StepMarks(count: 11)
-                            }
-                            Image(systemName: "sun.max.fill").foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Brightness (\(model.data.settings.card.style.label))")
+                    HStack(spacing: 12) {
+                        Image(systemName: "moon.fill").foregroundStyle(.secondary)
+                        VStack(spacing: 2) {
+                            // Each look remembers its own brightness.
+                            Slider(value: $model.data.settings.card.currentShade, in: -0.25...0.25, step: 0.05)
+                            StepMarks(count: 11)
                         }
+                        Image(systemName: "sun.max.fill").foregroundStyle(.secondary)
                     }
                 }
                 Picker("Columns", selection: $model.data.settings.card.columns) {
@@ -86,7 +85,7 @@ struct SettingsView: View {
             } header: {
                 Text("Lock Screen card")
             } footer: {
-                Text("Lock the phone to see changes. The middle mark is about as dark as your notifications; the right end is fully see-through. Apple fixes the card's height (about a fifth of the screen), so 2 columns or smaller text fit more: about 6 a column at size 12, 7 at 10, 8 at 9. Apple also removes a card after 8 hours; it puts itself back whenever you tick something or open the app.")
+                Text("Lock the phone to see changes. Each look keeps its own brightness. On Glass the middle mark is about as dark as your notifications and the right end is fully see-through; White is paper-white at the right end, Black solid black at the left end. Apple fixes the card's height (about a fifth of the screen), so 2 columns or smaller text fit more: about 6 a column at size 12, 7 at 10, 8 at 9. Apple also removes a card after 8 hours; it puts itself back whenever you tick something or open the app.")
             }
 
             Section("Test report") {

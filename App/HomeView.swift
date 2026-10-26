@@ -16,11 +16,11 @@ struct HomeView: View {
             .navigationTitle("To-do")
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top) {
-                // The logo in white at the top right, in line with the settings button.
+                // The logo in white at the top left, level with the settings button on the right.
                 HStack(spacing: 12) {
-                    Spacer()
                     Logo()
                         .frame(height: 34)
+                    Spacer()
                     NavigationLink {
                         SettingsView()
                     } label: {

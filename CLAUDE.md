@@ -41,12 +41,13 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 
 ## The Lock Screen card (owner's notes, 26 Oct 2026)
 - Apple's Live Activity glass turns light or dark with the wallpaper behind it (dark over a dark wallpaper, cream
-  over a light one), while notifications stay dark, so it could never match. The card now always sets its own tint
+  over a light one), while notifications stay dark, so it could never match. The card always sets its own tint
   (`CardTint`: see-through black, 0.32 at the slider's middle mark ≈ notifications, clear at the right end), or
-  White (paper-white, dark text). Glass / Clear glass (`glassEffect`) and See-through were tried and dropped.
+  White (paper-white, dark text) or Black (white text); each look keeps its own brightness (CardSettings shade / whiteShade / blackShade). Glass / Clear glass (`glassEffect`) and See-through were tried and dropped.
+- The logo sits top left on the first screen, level with the settings button on the right.
 - The Home Screen widget is a plain StaticConfiguration (kind "TodoListWidget") showing the top list: the
   AppIntentConfiguration ("choose a list") version stayed a grey skeleton on the sideloaded app, even in the Add
-  Widget preview. Test widgets A and B (TestWidgets.swift) are still in for checking; remove once it works.
+  Widget preview (fixed in 0.12, confirmed by the owner).
 - Apple caps the card at 160 points tall: it can't be made bigger. 2 columns or smaller text (down to 9) fit more.
 - "TO DO" sits top left in an outlined rounded box (no colon); the countdown ("2 hrs, 13 min", no "resets in")
   bottom right. The ↻ renew button was removed (it confused the owner; the card renews itself).

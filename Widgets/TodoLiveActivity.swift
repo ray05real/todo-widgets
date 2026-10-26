@@ -11,12 +11,12 @@ struct TodoLiveActivity: Widget {
             if context.state.card.style == .white {
                 LockScreenCard(context: context)
                     .environment(\.colorScheme, .light)
-                    .activityBackgroundTint(Color.white)
+                    .activityBackgroundTint(CardTint.color(for: context.state.card))
                     .activitySystemActionForegroundColor(Color.black)
             } else {
                 LockScreenCard(context: context)
                     .environment(\.colorScheme, .dark)
-                    .activityBackgroundTint(CardTint.color(shade: context.state.card.shade))
+                    .activityBackgroundTint(CardTint.color(for: context.state.card))
                     .activitySystemActionForegroundColor(Color.white)
             }
         } dynamicIsland: { context in
@@ -51,14 +51,22 @@ struct TodoLiveActivity: Widget {
     }
 }
 
-/// The see-through dark tint behind the card. The brightness slider runs from -0.25 to 0.25 in 11 steps; the
-/// middle (0) is about as dark as iOS 26's notifications, the lightest step is fully see-through.
+/// The card's background for each look. The brightness slider runs from -0.25 (darker) to 0.25 (lighter) in 11
+/// steps, remembered separately for each look:
+/// - Glass: see-through black; the middle is about as dark as iOS 26's notifications, the lightest step clear.
+/// - White: paper white at the lightest step, letting more of the wallpaper through as it goes darker.
+/// - Black: solid black at the darkest step, letting more of the wallpaper through as it goes lighter.
 enum CardTint {
-    static let middle = 0.32
-
-    static func color(shade: Double) -> Color {
-        let opacity = min(max(middle - shade * (middle / 0.25), 0), 0.85)
-        return Color.black.opacity(opacity)
+    static func color(for card: CardSettings) -> Color {
+        let step = min(max(card.currentShade / 0.25, -1), 1)   // -1 darkest … 0 middle … 1 lightest
+        switch card.style {
+        case .standard:
+            return Color.black.opacity(0.32 - step * 0.32)
+        case .white:
+            return Color.white.opacity(0.85 + step * 0.15)
+        case .black:
+            return Color.black.opacity(0.85 - step * 0.15)
+        }
     }
 }
 

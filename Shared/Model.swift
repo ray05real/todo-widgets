@@ -128,13 +128,14 @@ extension Collection where Element == TodoItem {
     }
 }
 
-/// The Lock Screen card's background. (Liquid Glass and see-through looks were tried and looked the same as Apple's
-/// own glass on the owner's iPhone, so they were dropped.)
+/// The Lock Screen card's background. (Apple's own glass, Liquid Glass and see-through looks were tried and dropped.)
 enum CardStyle: String, Codable, CaseIterable, Identifiable {
-    /// Apple's own Live Activity glass, with the brightness wash.
+    /// See-through dark, about like iOS 26's notifications.
     case standard
     /// White like a sheet of paper, with dark text.
     case white
+    /// Black, with white text.
+    case black
 
     var id: String { rawValue }
 
@@ -142,6 +143,7 @@ enum CardStyle: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .standard: return "Glass"
         case .white: return "White"
+        case .black: return "Black"
         }
     }
 }
@@ -149,8 +151,11 @@ enum CardStyle: String, Codable, CaseIterable, Identifiable {
 /// How the Lock Screen card (and its Dynamic Island versions) look.
 struct CardSettings: Codable, Hashable {
     var style = CardStyle.standard
-    /// A light (above 0) or dark (below 0) wash over the glass, in steps of 0.05 from -0.25 to 0.25.
+    /// Each look's brightness, remembered separately, in steps of 0.05 from -0.25 (darker) to 0.25 (lighter);
+    /// 0 is the middle mark. (`shade` is the Glass one: it was the only one before White and Black had theirs.)
     var shade = 0.0
+    var whiteShade = 0.0
+    var blackShade = 0.0
     /// The card's own text size (nil = the same as the lists). Smaller fits more to-dos on the card.
     var size: Double?
     /// Two columns fit twice as many short to-dos on the card.
@@ -164,9 +169,29 @@ struct CardSettings: Codable, Hashable {
         let d = CardSettings()
         style = (try? c.decodeIfPresent(CardStyle.self, forKey: .style)) ?? d.style
         shade = try c.decodeIfPresent(Double.self, forKey: .shade) ?? d.shade
+        whiteShade = try c.decodeIfPresent(Double.self, forKey: .whiteShade) ?? d.whiteShade
+        blackShade = try c.decodeIfPresent(Double.self, forKey: .blackShade) ?? d.blackShade
         size = try c.decodeIfPresent(Double.self, forKey: .size)
         columns = try c.decodeIfPresent(Int.self, forKey: .columns) ?? d.columns
         showInIsland = try c.decodeIfPresent(Bool.self, forKey: .showInIsland) ?? d.showInIsland
+    }
+
+    /// The brightness of the look that's picked.
+    var currentShade: Double {
+        get {
+            switch style {
+            case .standard: return shade
+            case .white: return whiteShade
+            case .black: return blackShade
+            }
+        }
+        set {
+            switch style {
+            case .standard: shade = newValue
+            case .white: whiteShade = newValue
+            case .black: blackShade = newValue
+            }
+        }
     }
 }
 
