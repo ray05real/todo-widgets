@@ -1,11 +1,7 @@
 import SwiftUI
-import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject private var model: AppModel
-    @State private var report = Report.text()
-    @State private var log = Log.lines
-    @State private var copied = false
 
     var body: some View {
         Form {
@@ -48,7 +44,7 @@ struct SettingsView: View {
             } header: {
                 Text("Where it shows")
             } footer: {
-                Text("The countdown (bottom right of the card) is how long until your list resets. Widgets are added and removed on the Home Screen and Lock Screen themselves: press and hold, then Edit or Remove. Apple doesn't let apps do that.")
+                Text("The countdown (bottom right of the card) is how long until your list resets. The card also shows when you pull down from the top of the Home Screen: that's the Lock Screen too, and Apple doesn't let apps show it in one and not the other. Widgets are added and removed on the Home Screen and Lock Screen themselves: press and hold, then Edit or Remove.")
             }
 
             Section {
@@ -86,25 +82,6 @@ struct SettingsView: View {
                 Text("Lock Screen card")
             } footer: {
                 Text("Lock the phone to see changes. Each look keeps its own brightness. On Glass the middle mark is about as dark as your notifications and the right end is fully see-through; White is paper-white at the right end, Black solid black at the left end. Apple fixes the card's height (about a fifth of the screen), so 2 columns or smaller text fit more: about 6 a column at size 12, 7 at 10, 8 at 9. Apple also removes a card after 8 hours; it puts itself back whenever you tick something or open the app.")
-            }
-
-            Section("Test report") {
-                Text(report)
-                    .font(.caption.monospaced())
-                    .textSelection(.enabled)
-                Button(copied ? "Copied" : "Copy report") {
-                    UIPasteboard.general.string = report + "\n\nLog:\n" + log.joined(separator: "\n")
-                    copied = true
-                }
-            }
-
-            Section("What happened") {
-                if log.isEmpty {
-                    Text("Nothing yet").foregroundStyle(.secondary)
-                }
-                ForEach(Array(log.enumerated()), id: \.offset) { _, line in
-                    Text(line).font(.caption.monospaced())
-                }
             }
         }
         .navigationTitle("Settings")

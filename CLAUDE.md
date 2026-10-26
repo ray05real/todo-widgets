@@ -25,7 +25,7 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - The widgets can only read the list if the certificate lets app and widgets share storage: `TodoStore` uses an
   App Group if the signature has one, else a shared keychain group (`<team>.todo.shared`, allowed by wildcard
   profiles), else app-only storage. `Signing` reads the real entitlements from the signed binary and the embedded
-  profile; the app's "Test report" shows them (the owner copies it back).
+  profile (the in-app "Test report" was removed once the widget worked; see git history if it is needed again).
 
 ## The owner's choices (26 Oct 2026)
 - Ticked to-dos **stay where they are** (moving them to the bottom felt overwhelming). Widgets and the card show a
