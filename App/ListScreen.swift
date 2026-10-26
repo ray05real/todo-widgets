@@ -3,13 +3,10 @@ import SwiftUI
 /// One list: its to-dos (tap to tick), unfinished ones from last time to bring over, and a box to add more.
 struct ListScreen: View {
     @EnvironmentObject private var model: AppModel
-    @Environment(\.dismiss) private var dismiss
     let listID: String
     @State private var newTitle = ""
     @State private var newColor = 0
     @State private var editing: TodoItem?
-    @State private var renaming = false
-    @State private var nameDraft = ""
     @FocusState private var adding: Bool
 
     var body: some View {
@@ -39,9 +36,19 @@ struct ListScreen: View {
                             if let i = list.items.firstIndex(where: { $0.id == item.id }) { list.items[i].done.toggle() }
                         }
                     }
-                    .swipeActions(edge: .leading) {
-                        Button("Edit") { editing = item }
-                            .tint(Color.blue)
+                    // Swiping left, like a chat in WhatsApp: a short swipe shows Edit and Delete, a long swipe deletes.
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            model.edit(list.id) { list in list.items.removeAll { $0.id == item.id } }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        Button {
+                            editing = item
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(Color.gray)
                     }
                     .contextMenu {
                         Button("Edit") { editing = item }
@@ -50,15 +57,12 @@ struct ListScreen: View {
                         }
                     }
                 }
-                .onDelete { offsets in
-                    model.edit(list.id) { $0.items.remove(atOffsets: offsets) }
-                }
                 .onMove { from, to in
                     model.edit(list.id) { $0.items.move(fromOffsets: from, toOffset: to) }
                 }
             } footer: {
                 if !list.items.isEmpty {
-                    Tip("Tap to tick. Swipe right to edit.")
+                    Tip("Tap to tick. Swipe left to edit or delete.")
                 }
             }
 
@@ -114,40 +118,23 @@ struct ListScreen: View {
             ToolbarItem(placement: .topBarTrailing) {
                 EditButton()
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Button("Rename") {
-                        nameDraft = list.name ?? ""
-                        renaming = true
-                    }
-                    if model.data.settings.cardPerList {
-                        // Only matters when every list gets its own card (Settings → Every list).
+            // Rename and Delete moved to swiping the list left on the first screen; this menu is only there for the
+            // per-list card switch (Settings → Every list).
+            if model.data.settings.cardPerList {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
                         Toggle("Show on the Lock Screen", isOn: Binding(
                             get: { list.showOnCard },
                             set: { on in model.edit(list.id) { $0.showOnCard = on } }
                         ))
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
-                    Button("Delete list", role: .destructive) {
-                        model.deleteList(list.id)
-                        dismiss()
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
         .sheet(item: $editing) { item in
             ItemEditor(listID: list.id, item: item)
-        }
-        .alert("Rename list", isPresented: $renaming) {
-            TextField("Name", text: $nameDraft)
-            Button("Save") {
-                let name = nameDraft.trimmingCharacters(in: .whitespaces)
-                model.edit(list.id) { $0.name = name.isEmpty ? nil : name }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Leave it empty to call it Today or Tomorrow.")
         }
     }
 

@@ -7,11 +7,27 @@ struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var path: [String] = []
     @State private var showNew = false
+    /// The list being renamed (from a swipe), and the name being typed.
+    @State private var renaming: String?
+    @State private var nameDraft = ""
 
     var body: some View {
         NavigationStack(path: $path) {
             TimelineView(.everyMinute) { timeline in
                 lists(at: timeline.date)
+            }
+            .alert("Rename list", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
+                TextField("Name", text: $nameDraft)
+                Button("Save") {
+                    let name = nameDraft.trimmingCharacters(in: .whitespaces)
+                    if let id = renaming {
+                        model.edit(id) { $0.name = name.isEmpty ? nil : name }
+                    }
+                    renaming = nil
+                }
+                Button("Cancel", role: .cancel) { renaming = nil }
+            } message: {
+                Text("Leave it empty to call it Today or Tomorrow.")
             }
             // The logo and the settings cog sit in iOS's own top bar, exactly where the back arrow is on the other
             // screens (the owner's reference). Neither gets iOS's glass bubble: the logo has a fixed size (the bar
@@ -88,6 +104,7 @@ struct HomeView: View {
                         NavigationLink(value: list.id) {
                             ListSummary(list: list, now: now, onCard: model.data.settings.keepCard && onCards.contains(list.id))
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) { swipeActions(for: list) }
                     }
                     .onMove { source, destination in
                         model.moveRunning(from: source, to: destination, at: now)
@@ -106,6 +123,7 @@ struct HomeView: View {
                         NavigationLink(value: list.id) {
                             ListSummary(list: list, now: now)
                         }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) { swipeActions(for: list) }
                     }
                 }
             }
@@ -124,6 +142,23 @@ struct HomeView: View {
                 Tip("A planned list takes over when this one ends.")
             }
         }
+    }
+
+    /// Swiping a list left, like a chat in WhatsApp: a short swipe shows Rename and Delete, a long swipe deletes.
+    @ViewBuilder
+    private func swipeActions(for list: TodoList) -> some View {
+        Button(role: .destructive) {
+            model.deleteList(list.id)
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+        Button {
+            nameDraft = list.name ?? ""
+            renaming = list.id
+        } label: {
+            Label("Rename", systemImage: "pencil")
+        }
+        .tint(Color.gray)
     }
 }
 
