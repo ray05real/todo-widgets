@@ -220,9 +220,9 @@ struct TodoData: Codable, Hashable {
         settings = try c.decodeIfPresent(TodoSettings.self, forKey: .settings) ?? TodoSettings()
     }
 
-    /// Lists running at `date`, newest first.
+    /// Lists running at `date`, in the owner's order (drag to reorder on the first screen).
     func running(at date: Date) -> [TodoList] {
-        lists.filter { $0.isRunning(at: date) }.sorted { $0.start > $1.start }
+        lists.filter { $0.isRunning(at: date) }
     }
 
     /// Lists that start after `date`, soonest first.
@@ -230,11 +230,9 @@ struct TodoData: Codable, Hashable {
         lists.filter { $0.start > date }.sorted { $0.start < $1.start }
     }
 
-    /// The list the widgets and the card follow: the newest running list with an end (a daily one), else the
-    /// newest running one.
+    /// The list the card and the widgets follow: the top running list in the owner's order.
     func current(at date: Date) -> TodoList? {
-        let active = running(at: date)
-        return active.first { $0.end != nil } ?? active.first
+        running(at: date).first
     }
 
     /// The running list a widget was set to (by name), or the current one.

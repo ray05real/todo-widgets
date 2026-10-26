@@ -14,17 +14,29 @@ struct HomeView: View {
                 lists(at: timeline.date)
             }
             .navigationTitle("To-do")
-            .navigationDestination(for: String.self) { id in
-                ListScreen(listID: id)
-            }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top) {
+                // The logo in white at the top right, in line with the settings button.
+                HStack(spacing: 12) {
+                    Spacer()
+                    Logo()
+                        .frame(height: 34)
                     NavigationLink {
                         SettingsView()
                     } label: {
                         Image(systemName: "gearshape")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .frame(width: 40, height: 40)
+                            .background(.ultraThinMaterial, in: Circle())
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .background(Color(.systemGroupedBackground))
+            }
+            .navigationDestination(for: String.self) { id in
+                ListScreen(listID: id)
             }
         }
         .sheet(isPresented: $showNew) {
@@ -61,11 +73,20 @@ struct HomeView: View {
                     Text("No list is running right now.")
                 }
             } else {
-                Section("Now") {
+                Section {
                     ForEach(running) { list in
                         NavigationLink(value: list.id) {
-                            ListSummary(list: list, now: now)
+                            ListSummary(list: list, now: now, onCard: list.id == running.first?.id)
                         }
+                    }
+                    .onMove { source, destination in
+                        model.moveRunning(from: source, to: destination, at: now)
+                    }
+                } header: {
+                    Text("Now")
+                } footer: {
+                    if running.count > 1 {
+                        Text("Hold a list and drag it to reorder. The top one shows on your Lock Screen and widgets.")
                     }
                 }
             }
@@ -100,12 +121,20 @@ struct HomeView: View {
 struct ListSummary: View {
     let list: TodoList
     let now: Date
+    /// The list the Lock Screen card and the widgets show.
+    var onCard = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
                 Text(list.displayName(at: now))
                     .font(.headline)
+                if onCard {
+                    Image(systemName: "lock.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("On the Lock Screen")
+                }
                 Spacer()
                 Text("\(list.items.count - list.leftCount) of \(list.items.count) done")
                     .font(.subheadline)

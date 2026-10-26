@@ -6,5 +6,7 @@ struct TodoWidgetsBundle: WidgetBundle {
     var body: some Widget {
         TodoWidget()
         TodoLiveActivity()
+        TestWidgetA()
+        TestWidgetB()
     }
 }
