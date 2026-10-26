@@ -14,22 +14,28 @@ struct HomeView: View {
                 lists(at: timeline.date)
             }
             // The logo and the settings cog sit in iOS's own top bar, exactly where the back arrow is on the other
-            // screens (the owner's reference). The logo has no glass bubble behind it; the cog keeps one, like the
-            // back arrow.
+            // screens (the owner's reference). Neither gets iOS's glass bubble: the logo has a fixed size (the bar
+            // shrank it), and the cog keeps the owner's look, a blue cog in a dark circle.
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Logo()
-                        .frame(height: 30)
+                        .frame(width: 79, height: 36)
                 }
                 .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(value: Self.settingsRoute) {
                         Image(systemName: "gearshape")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 40, height: 40)
+                            .background(.ultraThinMaterial, in: Circle())
                     }
+                    .buttonStyle(.plain)
                     .accessibilityLabel("Settings")
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .navigationDestination(for: String.self) { id in
                 if id == Self.settingsRoute {
