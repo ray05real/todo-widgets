@@ -163,18 +163,39 @@ struct ItemEditor: View {
     }
 }
 
-/// A font size from 12 to 32 points, like Word's size box.
+/// A font size in points, like Word's size box.
 struct SizeSlider: View {
     @Binding var size: Double
+    var range: ClosedRange<Double> = 12...32
 
     var body: some View {
         HStack(spacing: 12) {
             Text("A").font(.system(size: 12))
-            Slider(value: $size, in: 12...32, step: 1)
+            Slider(value: $size, in: range, step: 1)
             Text("A").font(.system(size: 24))
             Text("\(Int(size))")
                 .monospacedDigit()
                 .frame(width: 28, alignment: .trailing)
         }
+    }
+}
+
+/// Small marks under a slider, one per step (the middle one taller), so you can see where each step is.
+struct StepMarks: View {
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(0..<count, id: \.self) { i in
+                Rectangle()
+                    .fill(Color.secondary)
+                    .frame(width: 1.5, height: i == count / 2 ? 9 : 5)
+                if i < count - 1 {
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        // The slider's knob stops half its width short of each end of the track.
+        .padding(.horizontal, 13)
     }
 }

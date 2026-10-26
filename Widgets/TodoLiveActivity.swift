@@ -6,19 +6,19 @@ import WidgetKit
 struct TodoLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TodoActivityAttributes.self) { context in
-            // Any background tint turns Apple's own card glass off, so it's only set for the other looks.
-            if context.state.card.style == .standard {
+            // Any background tint turns Apple's glass off, so it's only set for the white card.
+            if context.state.card.style == .white {
                 LockScreenCard(context: context)
+                    .environment(\.colorScheme, .light)
+                    .activityBackgroundTint(Color.white)
+                    .activitySystemActionForegroundColor(Color.black)
             } else {
                 LockScreenCard(context: context)
-                    .activityBackgroundTint(Color.clear)
             }
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Text(context.state.title)
-                        .font(.headline)
-                        .lineLimit(1)
+                    TitleBadge(title: context.state.title)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if let end = context.state.end, context.state.showCountdown, !context.isStale {
@@ -47,14 +47,32 @@ struct TodoLiveActivity: Widget {
     }
 }
 
-/// "resets in 2 hrs, 13 min", counting down by itself.
+/// How long until the list resets ("2 hrs, 13 min"), counting down by itself.
 struct Countdown: View {
     let end: Date
 
     var body: some View {
-        (Text("resets in ") + Text(end, style: .relative))
+        Text(end, style: .relative)
             .monospacedDigit()
             .multilineTextAlignment(.trailing)
+    }
+}
+
+/// The list's title ("TO DO") in an outlined box with rounded corners, top left.
+struct TitleBadge: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .padding(.horizontal, 8)
+            .frame(height: 19)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(Color.primary.opacity(0.6), lineWidth: 1.2)
+            )
     }
 }
 
@@ -93,29 +111,16 @@ struct LockScreenCard: View {
     var body: some View {
         let state = context.state
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 5) {
-                Text(state.title)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
+            HStack(spacing: 6) {
+                TitleBadge(title: state.title)
                 if state.total > state.items.count {
                     Text("\(state.first + 1)–\(state.first + state.items.count) of \(state.total)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
                 }
-                Spacer(minLength: 6)
-                if let end = state.end, state.showCountdown, !context.isStale {
-                    Countdown(end: end)
-                        .frame(maxWidth: 170, alignment: .trailing)
-                }
-                if state.card.showRenew {
-                    Button(intent: RenewCardIntent()) {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.plain)
-                }
+                Spacer(minLength: 0)
             }
-            .font(.system(size: 12))
-            .foregroundStyle(.secondary)
-            .lineLimit(1)
-            .frame(height: 16)
+            .frame(height: 21, alignment: .top)
 
             if context.isStale || state.listID == nil {
                 VStack(alignment: .leading, spacing: 3) {
@@ -125,37 +130,36 @@ struct LockScreenCard: View {
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
-                .padding(.top, 8)
+                .padding(.top, 6)
             } else if state.items.isEmpty {
                 Text("Nothing on this list yet. Tap to add some.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
-                    .padding(.top, 8)
+                    .padding(.top, 6)
             } else {
                 CardRows(state: state, height: CardLayout.rowsHeight, source: "Lock Screen card")
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
-        .padding(.vertical, 9)
-        .background { CardBackground(card: state.card) }
-    }
-}
-
-/// Behind the card: iOS 26's Liquid Glass for the glass looks, then the light or dark wash.
-struct CardBackground: View {
-    let card: CardSettings
-
-    var body: some View {
-        ZStack {
-            if card.style == .glass || card.style == .clearGlass {
-                if #available(iOS 26.0, *) {
-                    Rectangle()
-                        .fill(Color.clear)
-                        .glassEffect(card.style == .glass ? .regular : .clear, in: Rectangle())
-                }
+        .padding(.vertical, 7)
+        .background(shade)
+        .overlay(alignment: .bottomTrailing) {
+            if let end = state.end, state.showCountdown, !context.isStale {
+                Countdown(end: end)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 120, alignment: .trailing)
+                    .padding(.trailing, 14)
+                    .padding(.bottom, 3)
             }
-            card.shade >= 0 ? Color.white.opacity(card.shade) : Color.black.opacity(-card.shade)
         }
+    }
+
+    /// The light or dark wash over the glass (Settings → Lock Screen card → Brightness). None on the white card.
+    private var shade: Color {
+        let card = context.state.card
+        guard card.style == .standard else { return Color.clear }
+        return card.shade >= 0 ? Color.white.opacity(card.shade) : Color.black.opacity(-card.shade)
     }
 }

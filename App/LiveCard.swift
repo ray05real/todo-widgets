@@ -43,7 +43,7 @@ enum LiveCard {
         let countdown = data.settings.showCountdown
         guard let list = data.current(at: now) else {
             return TodoActivityAttributes.ContentState(
-                listID: nil, title: "TO DO:", end: nil, items: [], first: 0, total: 0, left: 0,
+                listID: nil, title: "TO DO", end: nil, items: [], first: 0, total: 0, left: 0,
                 look: look, card: card, showCountdown: countdown, nextReady: !data.planned(after: now).isEmpty
             )
         }

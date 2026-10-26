@@ -32,40 +32,6 @@ struct ListScreen: View {
                 }
             }
 
-            if !suggestions.isEmpty {
-                Section {
-                    ForEach(suggestions) { item in
-                        HStack(spacing: 14) {
-                            Text(item.title)
-                                .font(look.applied(to: item).swiftUIFont)
-                                .foregroundStyle(Palette.color(item.color))
-                            Spacer()
-                            Button {
-                                bringOver([item], to: list)
-                            } label: {
-                                Image(systemName: "plus.circle.fill").font(.title2)
-                            }
-                            .buttonStyle(.borderless)
-                            .tint(Color.green)
-                            Button {
-                                model.edit(list.id) { $0.dismissed.append(item.id) }
-                            } label: {
-                                Image(systemName: "xmark.circle").font(.title2)
-                            }
-                            .buttonStyle(.borderless)
-                            .tint(Color.secondary)
-                        }
-                    }
-                    if suggestions.count > 1 {
-                        Button("Bring all \(suggestions.count) over") { bringOver(suggestions, to: list) }
-                    }
-                } header: {
-                    Text("Not finished last time")
-                } footer: {
-                    Text("Tap + to bring one over, or × to leave it behind.")
-                }
-            }
-
             Section {
                 ForEach(list.items) { item in
                     ItemRow(item: item, look: look.applied(to: item)) {
@@ -106,6 +72,41 @@ struct ListScreen: View {
                 ColorDots(selection: $newColor)
             } header: {
                 Text("Add")
+            }
+
+            // Below the Add box (the owner's choice), so they don't sit on top of the new list.
+            if !suggestions.isEmpty {
+                Section {
+                    ForEach(suggestions) { item in
+                        HStack(spacing: 14) {
+                            Text(item.title)
+                                .font(look.applied(to: item).swiftUIFont)
+                                .foregroundStyle(Palette.color(item.color))
+                            Spacer()
+                            Button {
+                                bringOver([item], to: list)
+                            } label: {
+                                Image(systemName: "plus.circle.fill").font(.title2)
+                            }
+                            .buttonStyle(.borderless)
+                            .tint(Color.green)
+                            Button {
+                                model.edit(list.id) { $0.dismissed.append(item.id) }
+                            } label: {
+                                Image(systemName: "xmark.circle").font(.title2)
+                            }
+                            .buttonStyle(.borderless)
+                            .tint(Color.secondary)
+                        }
+                    }
+                    if suggestions.count > 1 {
+                        Button("Bring all \(suggestions.count) over") { bringOver(suggestions, to: list) }
+                    }
+                } header: {
+                    Text("Not finished last time")
+                } footer: {
+                    Text("Tap + to bring one over, or × to leave it behind.")
+                }
             }
         }
         .navigationTitle(list.displayName(at: .now))

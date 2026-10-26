@@ -40,11 +40,14 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - A notification when a list ends; an optional daily "plan your next list" reminder.
 
 ## The Lock Screen card (owner's notes, 26 Oct 2026)
-- Apple's Live Activity glass is darker than iOS 26 notifications and apps can't use the notification material, so
-  Settings offers looks to try on the phone: Apple's card, Glass / Clear glass (SwiftUI `glassEffect`, untested in a
-  Live Activity), See-through, plus a brightness wash. Find which one matches, then make it the default.
-- Apple caps the card at 160 points tall: it can't be made bigger. 2 columns or smaller text fit more.
-- Switches: card on/off, Dynamic Island on/off (empty compact views), countdown, renew button (off by default).
+- Apple's Live Activity glass is darker than iOS 26 notifications and apps can't use the notification material.
+  Glass / Clear glass (SwiftUI `glassEffect`) and See-through looked the same on the phone, so they were dropped:
+  the looks are Glass (Apple's, with a brightness wash in 11 marked steps) and White (paper-white, dark text).
+- Apple caps the card at 160 points tall: it can't be made bigger. 2 columns or smaller text (down to 9) fit more.
+- "TO DO" sits top left in an outlined rounded box (no colon); the countdown ("2 hrs, 13 min", no "resets in")
+  bottom right. The ↻ renew button was removed (it confused the owner; the card renews itself).
+- Switches: card on/off, the count in the Dynamic Island on/off (empty compact views), countdown.
+- "Not finished last time" sits below the Add box.
 - App icon: "To Do" in a box, one slit per shape (box, T, D) like Revolut's R, dark shaded with a light rim (drawn
   with System.Drawing in PowerShell; see git history for the drawing code).
 

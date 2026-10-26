@@ -93,6 +93,14 @@ struct HomeScreenWidget: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
+                } else if TodoStore.method == .local {
+                    // The widget can't reach the app's list: the signing certificate didn't allow the two to share
+                    // a place to keep it (no App Group or shared keychain).
+                    Text("Can't see your list")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("The signing certificate doesn't let widgets share the app's list.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
                 } else {
                     Text("No list right now")
                         .font(.system(size: 16, weight: .semibold))
@@ -105,31 +113,28 @@ struct HomeScreenWidget: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
+        .overlay(alignment: .bottomTrailing) {
+            if let end = entry.list?.end, entry.data.settings.showCountdown {
+                Countdown(end: end)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: 110, alignment: .trailing)
+                    .padding(.trailing, 14)
+                    .padding(.bottom, 4)
+            }
+        }
     }
 
-    /// "TO DO:" on the left; on the right how long until the list resets.
+    /// "TO DO" in its box, and which to-dos are showing when they don't all fit.
     private func header(_ list: TodoList, window: (start: Int, items: ArraySlice<TodoItem>), narrow: Bool) -> some View {
-        HStack(spacing: 4) {
-            Text(list.headerTitle)
-                .font(.system(size: 15, weight: .bold))
+        HStack(spacing: 6) {
+            TitleBadge(title: list.headerTitle)
             if list.items.count > window.items.count, !narrow {
                 Text("\(window.start + 1)–\(window.start + window.items.count) of \(list.items.count)")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
-            Spacer(minLength: 4)
-            if let end = list.end, entry.data.settings.showCountdown {
-                if narrow {
-                    (Text("until ") + Text(end, format: .dateTime.hour().minute()))
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                } else {
-                    Countdown(end: end)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: 150, alignment: .trailing)
-                }
-            }
+            Spacer(minLength: 0)
         }
         .lineLimit(1)
         .frame(height: headerHeight, alignment: .top)

@@ -79,10 +79,9 @@ struct TodoList: Codable, Hashable, Identifiable {
         return start.formatted(.dateTime.weekday(.wide).day().month())
     }
 
-    /// "TO DO:" for the daily lists, else the list's name the same way ("SHOPPING:"), for the card and widgets.
+    /// "TO DO" for the daily lists, else the list's name the same way ("SHOPPING"), for the card and widgets.
     var headerTitle: String {
-        let title = (name?.isEmpty ?? true) ? "To do" : name!
-        return title.uppercased() + ":"
+        ((name?.isEmpty ?? true) ? "To do" : name!).uppercased()
     }
 
     /// The block of to-dos a widget or the card shows when they don't all fit in `columns` columns of `height`:
@@ -129,23 +128,20 @@ extension Collection where Element == TodoItem {
     }
 }
 
-/// The Lock Screen card's background.
+/// The Lock Screen card's background. (Liquid Glass and see-through looks were tried and looked the same as Apple's
+/// own glass on the owner's iPhone, so they were dropped.)
 enum CardStyle: String, Codable, CaseIterable, Identifiable {
-    /// Apple's own Live Activity glass (darker than notifications).
+    /// Apple's own Live Activity glass, with the brightness wash.
     case standard
-    /// iOS 26's Liquid Glass, the material notifications are made of ("Clear" is the more see-through kind).
-    case glass, clearGlass
-    /// No glass at all: the wallpaper shows straight through.
-    case seeThrough
+    /// White like a sheet of paper, with dark text.
+    case white
 
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .standard: return "Apple's card"
-        case .glass: return "Glass"
-        case .clearGlass: return "Clear glass"
-        case .seeThrough: return "See-through"
+        case .standard: return "Glass"
+        case .white: return "White"
         }
     }
 }
@@ -153,14 +149,13 @@ enum CardStyle: String, Codable, CaseIterable, Identifiable {
 /// How the Lock Screen card (and its Dynamic Island versions) look.
 struct CardSettings: Codable, Hashable {
     var style = CardStyle.standard
-    /// A light (above 0) or dark (below 0) wash over the background.
-    var shade = 0.15
+    /// A light (above 0) or dark (below 0) wash over the glass, in steps of 0.05 from -0.25 to 0.25.
+    var shade = 0.0
     /// The card's own text size (nil = the same as the lists). Smaller fits more to-dos on the card.
     var size: Double?
     /// Two columns fit twice as many short to-dos on the card.
     var columns = 1
     var showInIsland = true
-    var showRenew = false
 
     init() {}
 
@@ -172,7 +167,6 @@ struct CardSettings: Codable, Hashable {
         size = try c.decodeIfPresent(Double.self, forKey: .size)
         columns = try c.decodeIfPresent(Int.self, forKey: .columns) ?? d.columns
         showInIsland = try c.decodeIfPresent(Bool.self, forKey: .showInIsland) ?? d.showInIsland
-        showRenew = try c.decodeIfPresent(Bool.self, forKey: .showRenew) ?? d.showRenew
     }
 }
 
