@@ -43,6 +43,22 @@ struct SettingsView: View {
 
             Section {
                 Toggle("Keep the card on the Lock Screen", isOn: $model.data.settings.keepCard)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Brightness")
+                    HStack(spacing: 12) {
+                        Image(systemName: "moon.fill").foregroundStyle(.secondary)
+                        Slider(value: $model.data.settings.card.shade, in: -0.3...0.45, step: 0.05)
+                        Image(systemName: "sun.max.fill").foregroundStyle(.secondary)
+                    }
+                }
+                Toggle("See-through (no frosted glass)", isOn: $model.data.settings.card.seeThrough)
+                Toggle("Its own text size", isOn: Binding(
+                    get: { model.data.settings.card.size != nil },
+                    set: { model.data.settings.card.size = $0 ? 14 : nil }
+                ))
+                if let size = model.data.settings.card.size {
+                    SizeSlider(size: Binding(get: { size }, set: { model.data.settings.card.size = $0 }))
+                }
                 Button("Renew the card now") {
                     let data = model.data
                     Task { await LiveCard.sync(data, from: "app", forceRenew: true) }
@@ -50,7 +66,7 @@ struct SettingsView: View {
             } header: {
                 Text("Lock Screen card")
             } footer: {
-                Text("Apple removes a card 8 hours after it appears, so it renews itself whenever you tick something or open the app.")
+                Text("Lock the phone to see changes. Apple keeps the card to a fixed height (about a fifth of the screen), so smaller text fits more to-dos: about 4 at 17, 5 at 14, 6 at 12. Apple also removes a card 8 hours after it appears, so it renews itself whenever you tick something or open the app.")
             }
 
             Section("Test report") {

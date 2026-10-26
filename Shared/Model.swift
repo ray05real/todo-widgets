@@ -99,9 +99,20 @@ struct TodoList: Codable, Hashable, Identifiable {
     }
 }
 
+/// How the Lock Screen card looks.
+struct CardSettings: Codable, Hashable {
+    /// Lighter (above 0) or darker (below 0) than Apple's standard frosted glass, which is darker than notifications.
+    var shade = 0.15
+    /// No frosted glass at all: the wallpaper shows straight through.
+    var seeThrough = false
+    /// The card's own text size (nil = the same as the lists). Smaller fits more to-dos on the card.
+    var size: Double?
+}
+
 struct TodoSettings: Codable, Hashable {
     /// The font and size of every to-do that doesn't have its own.
     var text = TextLook()
+    var card = CardSettings()
     /// The daily reset, in minutes after midnight (0 = midnight): new lists end then unless told otherwise.
     var resetMinutes = 0
     var planReminder = false
@@ -114,6 +125,7 @@ struct TodoSettings: Codable, Hashable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let d = TodoSettings()
         text = (try? c.decodeIfPresent(TextLook.self, forKey: .text)) ?? d.text
+        card = (try? c.decodeIfPresent(CardSettings.self, forKey: .card)) ?? d.card
         resetMinutes = try c.decodeIfPresent(Int.self, forKey: .resetMinutes) ?? d.resetMinutes
         planReminder = try c.decodeIfPresent(Bool.self, forKey: .planReminder) ?? d.planReminder
         planMinutes = try c.decodeIfPresent(Int.self, forKey: .planMinutes) ?? d.planMinutes

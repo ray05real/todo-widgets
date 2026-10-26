@@ -6,7 +6,13 @@ import WidgetKit
 struct TodoLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: TodoActivityAttributes.self) { context in
-            LockScreenCard(context: context)
+            // Any background tint turns Apple's frosted glass off, so it's only set for the see-through look.
+            if context.state.card.seeThrough {
+                LockScreenCard(context: context)
+                    .activityBackgroundTint(Color.clear)
+            } else {
+                LockScreenCard(context: context)
+            }
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -88,7 +94,7 @@ struct LockScreenCard: View {
             .font(.system(size: 12))
             .foregroundStyle(.secondary)
             .lineLimit(1)
-            .frame(height: 18)
+            .frame(height: 16)
 
             if context.isStale || state.listID == nil {
                 VStack(alignment: .leading, spacing: 3) {
@@ -108,7 +114,15 @@ struct LockScreenCard: View {
                 CardRows(state: state, height: CardLayout.rowsHeight, source: "Lock Screen card")
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.vertical, 9)
+        .background(shade)
+    }
+
+    /// A light or dark wash over the card (Settings → Lock Screen card → Brightness).
+    private var shade: Color {
+        let amount = context.state.card.shade
+        return amount >= 0 ? Color.white.opacity(amount) : Color.black.opacity(-amount)
     }
 }

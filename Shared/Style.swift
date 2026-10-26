@@ -57,12 +57,12 @@ extension TextLook {
     /// A row on a Home Screen widget.
     var row: Double { max(28, (size * 2.05).rounded()) }
     /// A row on the Lock Screen card, which Apple caps at 160 points tall.
-    var cardRow: Double { max(24, (size * 1.65).rounded()) }
+    var cardRow: Double { max(20, (size * 1.65).rounded()) }
 }
 
 enum CardLayout {
-    /// Room for rows on the Lock Screen card (160 points minus the top line and the padding).
-    static let rowsHeight = 120.0
+    /// Room for rows on the Lock Screen card (Apple's 160 points minus the top line and the padding).
+    static let rowsHeight = 124.0
     /// Room for rows in the Dynamic Island when it's opened.
     static let islandHeight = 96.0
 }
