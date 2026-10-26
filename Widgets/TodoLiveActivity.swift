@@ -159,13 +159,15 @@ struct LockScreenCard: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
         .overlay(alignment: .bottomTrailing) {
+            // Centred on the last row's line, inside the same margins as the to-dos.
             if let end = state.end, state.showCountdown, !context.isStale {
                 Countdown(end: end)
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 120, alignment: .trailing)
+                    .frame(height: state.look.cardRow)
                     .padding(.trailing, 14)
-                    .padding(.bottom, 3)
+                    .padding(.bottom, 7)
             }
         }
     }

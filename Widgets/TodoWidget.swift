@@ -116,13 +116,15 @@ struct HomeScreenWidget: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .overlay(alignment: .bottomTrailing) {
+            // Centred on a row's line at the bottom, inside the same margins as the to-dos.
             if let end = entry.list?.end, entry.data.settings.showCountdown {
                 Countdown(end: end)
-                    .font(.system(size: 10))
+                    .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: 110, alignment: .trailing)
+                    .frame(height: entry.data.settings.text.row)
                     .padding(.trailing, 14)
-                    .padding(.bottom, 4)
+                    .padding(.bottom, 12)
             }
         }
     }
