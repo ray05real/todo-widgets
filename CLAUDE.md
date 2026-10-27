@@ -66,3 +66,15 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 ## Status
 - 26 Oct 2026: test build worked on the iPhone (widgets, card, Dynamic Island ticks). Second build adds the choices
   above.
+
+## App Store plan (owner, 27 Oct 2026)
+- Name "ToDo" (likely taken on the App Store: the store name must be unique, e.g. "ToDo: Lock Screen List"; the name
+  under the icon can stay "ToDo"). Price: free download, 7-day free trial, then a £4.99 one-time lifetime unlock.
+  Apple's way for one-time purchases (guideline 3.1.1): a £0 non-consumable IAP named like "7-day Trial" plus a £4.99
+  non-consumable "Lifetime", with StoreKit 2. Needs the Paid Apps Agreement, bank and tax details in App Store Connect;
+  apply for the Small Business Program (15% commission).
+- Steps: owner enrols in the Apple Developer Program (£79/yr, also covers Pollz); then proper App Group, privacy
+  manifest (UserDefaults reason), ITSAppUsesNonExemptEncryption = NO, signed GitHub build uploading to TestFlight with an
+  App Store Connect API key in GitHub Secrets; store listing (privacy policy page, screenshots); review.
+- Review risk: Live Activities are meant for things with a clear start and end; "no end" lists and the hourly renewal
+  could be questioned.
