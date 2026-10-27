@@ -113,6 +113,10 @@ struct SettingsView: View {
         .onChange(of: model.data.settings) { _, _ in
             model.commit()
         }
+        .onChange(of: model.data.settings.resetMinutes) { old, new in
+            // Today's list and the planned ones follow the new reset time.
+            model.moveResetTimes(from: old, to: new)
+        }
     }
 
     /// A time of day for a DatePicker, kept as minutes after midnight.

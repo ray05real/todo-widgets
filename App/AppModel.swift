@@ -73,6 +73,36 @@ final class AppModel: ObservableObject {
         return newList(name: nil, start: start, end: settings.nextReset(after: start.addingTimeInterval(60)), after: current?.id)
     }
 
+    /// After the daily reset time changes (Settings → New list at), moves every start or end still to come that sat
+    /// on the old time to the nearest occurrence of the new one, so today's list and the planned ones follow it.
+    func moveResetTimes(from old: Int, to new: Int, now: Date = .now) {
+        guard old != new else { return }
+        let calendar = Calendar.current
+        func isOnOld(_ date: Date) -> Bool {
+            let parts = calendar.dateComponents([.hour, .minute], from: date)
+            return (parts.hour ?? 0) * 60 + (parts.minute ?? 0) == old
+        }
+        func moved(_ date: Date) -> Date {
+            let candidates = (-1...1).compactMap { offset -> Date? in
+                guard let day = calendar.date(byAdding: .day, value: offset, to: date) else { return nil }
+                return calendar.date(bySettingHour: new / 60, minute: new % 60, second: 0, of: day)
+            }
+            return candidates.min { abs($0.timeIntervalSince(date)) < abs($1.timeIntervalSince(date)) } ?? date
+        }
+        var changed = false
+        for i in data.lists.indices {
+            if data.lists[i].start > now, isOnOld(data.lists[i].start) {
+                data.lists[i].start = moved(data.lists[i].start)
+                changed = true
+            }
+            if let end = data.lists[i].end, end > now, isOnOld(end) {
+                data.lists[i].end = max(moved(end), data.lists[i].start.addingTimeInterval(60))
+                changed = true
+            }
+        }
+        if changed { commit() }
+    }
+
     func newListForToday() -> String {
         newList(name: nil, start: .now, end: data.settings.nextReset(after: .now))
     }
