@@ -6,6 +6,8 @@ struct ListScreen: View {
     let listID: String
     @State private var newTitle = ""
     @State private var newColor = 0
+    /// The font for to-dos being added (nil = the list's font from Settings); it stays picked for the next one.
+    @State private var newFont: FontChoice?
     @State private var editing: TodoItem?
     @State private var editingTimes = false
     @FocusState private var adding: Bool
@@ -80,12 +82,13 @@ struct ListScreen: View {
 
             Section {
                 TextField("Add a to-do", text: $newTitle)
-                    .font(look.swiftUIFont)
+                    .font((newFont ?? look.font).font(size: look.size))
                     .foregroundStyle(Palette.color(newColor))
                     .focused($adding)
                     .submitLabel(.done)
                     .onSubmit { add(to: list) }
                 ColorDots(selection: $newColor)
+                FontChips(selection: $newFont, sameAsList: true)
             } header: {
                 Text("Add")
             }
@@ -157,7 +160,8 @@ struct ListScreen: View {
         let title = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return }
         let color = newColor
-        model.edit(list.id) { $0.items.append(TodoItem(title: title, color: color)) }
+        let font = newFont
+        model.edit(list.id) { $0.items.append(TodoItem(title: title, color: color, font: font)) }
         newTitle = ""
         adding = true
     }
