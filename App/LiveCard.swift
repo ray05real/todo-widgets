@@ -9,13 +9,20 @@ extension Notification.Name {
 
 /// Ticks from outside the app's screen (widgets, Lock Screen card, Dynamic Island) land here, inside the app.
 enum TodoActions {
-    /// Kept quick: iOS ignores further taps on a widget until this one is done, so a tick only updates the cards
-    /// (swapping in a fresh card, which is slow, waits until a card is nearly at Apple's 8 hours).
+    /// Kept as quick as possible: iOS ignores further taps on a widget until this returns (the owner's taps after the
+    /// first kept getting lost). So it only saves the tick and returns:
+    /// - a tap on a widget doesn't reload the widgets itself, because iOS reloads the tapped one when this returns
+    ///   (reloading them all as well made it reload twice); a tap on the card or the Dynamic Island does, so the
+    ///   widgets catch up;
+    /// - the cards are updated just after, without making the tap wait (and a card is only swapped for a fresh one,
+    ///   which is slow, when it's nearly at Apple's 8 hours).
     @MainActor static func toggle(listID: String, itemID: String, from source: String) async {
         let data = TodoStore.toggle(listID: listID, itemID: itemID)
-        WidgetCenter.shared.reloadAllTimelines()
+        if !source.hasSuffix("widget") {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
         NotificationCenter.default.post(name: .todoDataChanged, object: nil)
-        await LiveCard.sync(data, from: source, renewAfter: LiveCard.renewAfterTick)
+        Task { await LiveCard.sync(data, from: source, renewAfter: LiveCard.renewAfterTick) }
     }
 
     @MainActor static func renewCard(from source: String) async {

@@ -85,4 +85,6 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - The build runs on GitHub's `xcode-27` runner (preview) so iOS 27's tall extra-large iPhone widget
   (`.systemExtraLargePortrait`, behind `#if IOS27_SDK`) is offered; the owner's iPhone is on iOS 27.2 now.
 - Widget taps after the first sometimes didn't register on iOS 27: iOS ignores taps while the last one's intent runs,
-  so a tick only updates the card (renewing a card waits until it is 6 hours old; opening the app renews after 1).
+  so a tick only saves and returns: a widget tap leaves the reload to iOS (no reloadAllTimelines, which made a double
+  reload), and the card update runs in a Task afterwards (renewing waits until a card is 6 hours old; opening the app
+  renews after 1).
