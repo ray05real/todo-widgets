@@ -15,6 +15,13 @@ struct TodoEntry: TimelineEntry {
     var noListText: String {
         ["No list right now", "No 2nd list right now", "No 3rd list right now"][min(rank, 2)]
     }
+
+    /// The line under it: what this widget is for.
+    var noListHint: String {
+        rank == 0
+            ? "Tap to make one"
+            : "This widget shows your \(rank == 1 ? "2nd" : "3rd") list. For your main list, add the plain \"To-do\" widget instead."
+    }
 }
 
 struct TodoProvider: TimelineProvider {
@@ -53,14 +60,17 @@ enum TodoWidgetKind {
         }
         .configurationDisplayName(name)
         .description(description)
-        .supportedFamilies(families)
+        .supportedFamilies(families(rank: rank))
         .contentMarginsDisabled()
     }
 
     /// The sizes on offer. The tall extra-large one is iPhone's biggest from iOS 27, and only exists when the app is
-    /// built with Apple's iOS 27 tools (the workflow sets IOS27_SDK then).
-    private static var families: [WidgetFamily] {
-        var families: [WidgetFamily] = [.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge, .accessoryRectangular]
+    /// built with Apple's iOS 27 tools (the workflow sets IOS27_SDK then). Only the top-list widget gets it: the
+    /// owner twice picked the 2nd-list one at that size in the widget gallery by mistake.
+    private static func families(rank: Int) -> [WidgetFamily] {
+        var families: [WidgetFamily] = [.systemSmall, .systemMedium, .systemLarge, .accessoryRectangular]
+        guard rank == 0 else { return families }
+        families.append(.systemExtraLarge)
         #if IOS27_SDK
         if #available(iOS 27.0, *) {
             families.append(.systemExtraLargePortrait)
@@ -159,7 +169,7 @@ struct HomeScreenWidget: View {
                 } else {
                     Text(entry.noListText)
                         .font(.system(size: 16, weight: .semibold))
-                    Text("Tap to make one")
+                    Text(entry.noListHint)
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                 }
