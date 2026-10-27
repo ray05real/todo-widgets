@@ -31,13 +31,15 @@ struct TodoProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<TodoEntry>) -> Void) {
-        // One entry now and one for each moment a list starts or ends, so the widget switches lists on time.
-        // Otherwise the app reloads the widgets whenever something changes.
+        // One entry now and one for the next moment a list starts or ends (then iOS asks again), so the widget
+        // switches lists on time. Only two: iOS draws every entry after each tap and ignores taps until it's done,
+        // and drawing up to 21 at extra-large size held taps up for about 5 seconds.
         let data = TodoStore.loadData()
         let now = Date.now
-        let dates = [now] + data.changes(after: now).prefix(20)
-        let entries = dates.map { TodoEntry(date: $0, data: data, rank: rank) }
-        completion(Timeline(entries: entries, policy: .never))
+        let next = data.changes(after: now).first
+        var entries = [TodoEntry(date: now, data: data, rank: rank)]
+        if let next { entries.append(TodoEntry(date: next, data: data, rank: rank)) }
+        completion(Timeline(entries: entries, policy: next == nil ? .never : .atEnd))
     }
 }
 
