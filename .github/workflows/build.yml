@@ -12,7 +12,8 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-15
+    # The Xcode 27 Mac (a GitHub preview): iOS 27's tall extra-large iPhone widget needs Apple's iOS 27 tools.
+    runs-on: xcode-27
     timeout-minutes: 30
     env:
       HOMEBREW_NO_AUTO_UPDATE: 1
@@ -21,10 +22,16 @@ jobs:
 
       - name: Use the newest Xcode
         run: |
-          XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)
+          ls -d /Applications/Xcode*.app
+          # Xcode 27 even while it's a beta; otherwise the newest finished Xcode.
+          XCODE=$(ls -d /Applications/Xcode_27*.app 2>/dev/null | sort -V | tail -1)
+          [ -z "$XCODE" ] && XCODE=$(ls -d /Applications/Xcode_*.app | grep -iv beta | sort -V | tail -1)
           echo "Using $XCODE"
           sudo xcode-select -s "$XCODE"
           xcodebuild -version
+          # Lets the code use iOS 27-only things (the tall extra-large widget) when built with Xcode 27 or newer.
+          MAJOR=$(xcodebuild -version | head -1 | sed 's/Xcode \([0-9]*\).*/\1/')
+          if [ "$MAJOR" -ge 27 ]; then echo "EXTRA_SWIFT_FLAGS=-D IOS27_SDK" >> "$GITHUB_ENV"; fi
 
       - name: Install XcodeGen
         run: brew install xcodegen xcbeautify
@@ -38,6 +45,7 @@ jobs:
           xcodebuild -project Todo.xcodeproj -target Todo -configuration Release -sdk iphoneos \
             SYMROOT="$PWD/build" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             MARKETING_VERSION="0.${{ github.run_number }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            OTHER_SWIFT_FLAGS="$EXTRA_SWIFT_FLAGS" \
             build 2>&1 | tee build.log | xcbeautify --renderer github-actions
 
       - name: Pack the .ipa

@@ -324,9 +324,22 @@ struct TodoSettings: Codable, Hashable {
     }
 }
 
-/// Everything the app keeps: all the lists and the settings.
+/// A list kept for reuse (e.g. Shopping): its to-dos, to start a new list from.
+struct SavedList: Codable, Hashable, Identifiable {
+    var id = UUID().uuidString
+    var name: String
+    var items: [TodoItem]
+
+    /// Fresh, unticked copies of its to-dos for a new list.
+    var freshItems: [TodoItem] {
+        items.map { TodoItem(title: $0.title, color: $0.color, font: $0.font, size: $0.size) }
+    }
+}
+
+/// Everything the app keeps: all the lists, the saved ones and the settings.
 struct TodoData: Codable, Hashable {
     var lists: [TodoList] = []
+    var saved: [SavedList] = []
     var settings = TodoSettings()
 
     init() {}
@@ -334,6 +347,7 @@ struct TodoData: Codable, Hashable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         lists = try c.decodeIfPresent([TodoList].self, forKey: .lists) ?? []
+        saved = (try? c.decodeIfPresent([SavedList].self, forKey: .saved)) ?? []
         settings = try c.decodeIfPresent(TodoSettings.self, forKey: .settings) ?? TodoSettings()
     }
 

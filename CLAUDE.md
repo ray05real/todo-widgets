@@ -78,3 +78,11 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   App Store Connect API key in GitHub Secrets; store listing (privacy policy page, screenshots); review.
 - Review risk: Live Activities are meant for things with a clear start and end; "no end" lists and the hourly renewal
   could be questioned.
+
+## Later changes (27 Oct 2026)
+- Saved lists (TodoData.saved): a list's ••• → Save for reuse keeps its to-dos under a name (same name replaces);
+  Saved on the first screen (tap = new list from it, swipe = Rename / Delete); New list → Start from.
+- The build runs on GitHub's `xcode-27` runner (preview) so iOS 27's tall extra-large iPhone widget
+  (`.systemExtraLargePortrait`, behind `#if IOS27_SDK`) is offered; the owner's iPhone is on iOS 27.2 now.
+- Widget taps after the first sometimes didn't register on iOS 27: iOS ignores taps while the last one's intent runs,
+  so a tick only updates the card (renewing a card waits until it is 6 hours old; opening the app renews after 1).

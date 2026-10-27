@@ -7,7 +7,9 @@ struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var path: [String] = []
     @State private var showNew = false
-    /// The list being renamed (from a swipe), and the name being typed.
+    /// The saved list a new list starts from (tapping one in Saved).
+    @State private var newFrom: String?
+    /// The list or saved list being renamed (from a swipe), and the name being typed.
     @State private var renaming: String?
     @State private var nameDraft = ""
 
@@ -21,7 +23,11 @@ struct HomeView: View {
                 Button("Save") {
                     let name = nameDraft.trimmingCharacters(in: .whitespaces)
                     if let id = renaming {
-                        model.edit(id) { $0.name = name.isEmpty ? nil : name }
+                        if model.data.saved.contains(where: { $0.id == id }) {
+                            model.renameSaved(id, to: name)
+                        } else {
+                            model.edit(id) { $0.name = name.isEmpty ? nil : name }
+                        }
                     }
                     renaming = nil
                 }
@@ -62,7 +68,7 @@ struct HomeView: View {
             }
         }
         .sheet(isPresented: $showNew) {
-            NewListSheet { id in path.append(id) }
+            NewListSheet(startFrom: newFrom) { id in path.append(id) }
         }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
@@ -134,12 +140,49 @@ struct HomeView: View {
                     Label("Plan the next list", systemImage: "calendar.badge.plus")
                 }
                 Button {
+                    newFrom = nil
                     showNew = true
                 } label: {
                     Label("New list…", systemImage: "plus")
                 }
             } footer: {
                 Tip("A planned list takes over when this one ends.")
+            }
+            if !model.data.saved.isEmpty {
+                Section {
+                    ForEach(model.data.saved) { saved in
+                        Button {
+                            newFrom = saved.id
+                            showNew = true
+                        } label: {
+                            HStack {
+                                Label(saved.name, systemImage: "tray.full")
+                                Spacer()
+                                Text("\(saved.items.count) to-dos")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                model.deleteSaved(saved.id)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            Button {
+                                nameDraft = saved.name
+                                renaming = saved.id
+                            } label: {
+                                Label("Rename", systemImage: "pencil")
+                            }
+                            .tint(Color.gray)
+                        }
+                    }
+                } header: {
+                    Text("Saved")
+                } footer: {
+                    Tip("Tap one to start a new list with its to-dos.")
+                }
             }
         }
     }

@@ -9,12 +9,13 @@ extension Notification.Name {
 
 /// Ticks from outside the app's screen (widgets, Lock Screen card, Dynamic Island) land here, inside the app.
 enum TodoActions {
+    /// Kept quick: iOS ignores further taps on a widget until this one is done, so a tick only updates the cards
+    /// (swapping in a fresh card, which is slow, waits until a card is nearly at Apple's 8 hours).
     @MainActor static func toggle(listID: String, itemID: String, from source: String) async {
         let data = TodoStore.toggle(listID: listID, itemID: itemID)
-        Log.add("Ticked from the \(source)")
         WidgetCenter.shared.reloadAllTimelines()
         NotificationCenter.default.post(name: .todoDataChanged, object: nil)
-        await LiveCard.sync(data, from: source)
+        await LiveCard.sync(data, from: source, renewAfter: LiveCard.renewAfterTick)
     }
 
     @MainActor static func renewCard(from source: String) async {
@@ -24,9 +25,11 @@ enum TodoActions {
 
 /// The Lock Screen card (Live Activity).
 enum LiveCard {
-    /// Apple ends a card 8 hours after it starts, so one older than this is swapped for a new one whenever you tick
-    /// something or open the app. That keeps it up as long as you use it at least every 8 hours or so.
+    /// Apple ends a card 8 hours after it starts, so one older than this is swapped for a new one when you open the
+    /// app, and one older than `renewAfterTick` when you tick something. That keeps it up as long as you use it at
+    /// least every 8 hours or so.
     static let renewAfter: TimeInterval = 60 * 60
+    static let renewAfterTick: TimeInterval = 6 * 60 * 60
 
     static var cards: [Activity<TodoActivityAttributes>] { Activity<TodoActivityAttributes>.activities }
 
@@ -70,7 +73,8 @@ enum LiveCard {
 
     /// Brings the cards up to date: one following the top list, or one per list (Settings → Every list). Cards
     /// that are missing or over an hour old are replaced by new ones; cards no longer wanted are taken away.
-    static func sync(_ data: TodoData, from source: String, forceRenew: Bool = false) async {
+    static func sync(_ data: TodoData, from source: String, forceRenew: Bool = false,
+                     renewAfter: TimeInterval = LiveCard.renewAfter) async {
         guard data.settings.keepCard else {
             await stop()
             return

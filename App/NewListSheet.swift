@@ -1,11 +1,16 @@
 import SwiftUI
 
-/// Making a list: an optional name, when it starts (now, at the next reset, or a time you pick) and how long it
-/// lasts (4 hours to 3 days, a time you pick, or no end).
+/// Making a list: empty or from a saved list, an optional name, when it starts (now, at the next reset, or a time
+/// you pick) and how long it lasts (4 hours to 3 days, a time you pick, or no end).
 struct NewListSheet: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    /// The saved list to start from, when opened by tapping one on the first screen.
+    var startFrom: String? = nil
     let onCreate: (String) -> Void
+
+    @State private var fromID: String?
+    @State private var prepared = false
 
     enum Start: Hashable { case now, nextReset, custom }
     enum Length: Hashable { case untilReset, hours(Int), custom, noEnd }
@@ -33,6 +38,21 @@ struct NewListSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                if !model.data.saved.isEmpty {
+                    Section("Start from") {
+                        Picker("Start from", selection: $fromID) {
+                            Text("Empty").tag(String?.none)
+                            ForEach(model.data.saved) { saved in
+                                Text("\(saved.name) (\(saved.items.count))").tag(Optional(saved.id))
+                            }
+                        }
+                        .pickerStyle(.inline)
+                        .labelsHidden()
+                        .onChange(of: fromID) { _, id in
+                            if let saved = model.data.saved.first(where: { $0.id == id }) { name = saved.name }
+                        }
+                    }
+                }
                 Section("Name") {
                     TextField("Optional, e.g. Shopping", text: $name)
                 }
@@ -76,6 +96,14 @@ struct NewListSheet: View {
                 }
             }
         }
+        .onAppear {
+            guard !prepared else { return }
+            prepared = true
+            if let startFrom, let saved = model.data.saved.first(where: { $0.id == startFrom }) {
+                fromID = saved.id
+                name = saved.name
+            }
+        }
     }
 
     private func create() {
@@ -88,7 +116,8 @@ struct NewListSheet: View {
         case .noEnd: ends = nil
         }
         let trimmed = name.trimmingCharacters(in: .whitespaces)
-        let id = model.newList(name: trimmed.isEmpty ? nil : trimmed, start: begins, end: ends)
+        let items = model.data.saved.first(where: { $0.id == fromID })?.freshItems ?? []
+        let id = model.newList(name: trimmed.isEmpty ? nil : trimmed, start: begins, end: ends, items: items)
         dismiss()
         onCreate(id)
     }

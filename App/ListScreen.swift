@@ -10,6 +10,8 @@ struct ListScreen: View {
     @State private var newFont: FontChoice?
     @State private var editing: TodoItem?
     @State private var editingTimes = false
+    @State private var savingForReuse = false
+    @State private var saveName = ""
     @FocusState private var adding: Bool
 
     var body: some View {
@@ -133,18 +135,24 @@ struct ListScreen: View {
             ToolbarItem(placement: .topBarTrailing) {
                 EditButton()
             }
-            // Rename and Delete moved to swiping the list left on the first screen; this menu is only there for the
-            // per-list card switch (Settings → Every list).
-            if model.data.settings.cardPerList {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
+            // Rename and Delete moved to swiping the list left on the first screen.
+            ToolbarItem(placement: .topBarTrailing) {
+                Menu {
+                    Button {
+                        saveName = list.name ?? ""
+                        savingForReuse = true
+                    } label: {
+                        Label("Save for reuse", systemImage: "tray.and.arrow.down")
+                    }
+                    if model.data.settings.cardPerList {
+                        // Only matters when every list gets its own card (Settings → Every list).
                         Toggle("Show on the Lock Screen", isOn: Binding(
                             get: { list.showOnCard },
                             set: { on in model.edit(list.id) { $0.showOnCard = on } }
                         ))
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
                     }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -153,6 +161,16 @@ struct ListScreen: View {
         }
         .sheet(isPresented: $editingTimes) {
             ListTimesEditor(list: list)
+        }
+        .alert("Save for reuse", isPresented: $savingForReuse) {
+            TextField("Name, e.g. Shopping", text: $saveName)
+            Button("Save") {
+                let name = saveName.trimmingCharacters(in: .whitespaces)
+                model.saveForReuse(list, as: name.isEmpty ? list.displayName(at: .now) : name)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Its to-dos are kept under Saved on the first screen, to start new lists from.")
         }
     }
 

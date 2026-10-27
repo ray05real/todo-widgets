@@ -31,10 +31,33 @@ final class AppModel: ObservableObject {
         commit()
     }
 
-    /// Adds a list at the bottom of the order (so it doesn't take over the card), or right after `anchorID`.
+    /// Keeps a list's to-dos to reuse later (a saved list with the same name is replaced).
+    func saveForReuse(_ list: TodoList, as name: String) {
+        let saved = SavedList(name: name, items: list.items)
+        if let i = data.saved.firstIndex(where: { $0.name.lowercased() == name.lowercased() }) {
+            data.saved[i].items = saved.items
+        } else {
+            data.saved.append(saved)
+        }
+        commit()
+    }
+
+    func deleteSaved(_ id: String) {
+        data.saved.removeAll { $0.id == id }
+        commit()
+    }
+
+    func renameSaved(_ id: String, to name: String) {
+        guard let i = data.saved.firstIndex(where: { $0.id == id }), !name.isEmpty else { return }
+        data.saved[i].name = name
+        commit()
+    }
+
+    /// Adds a list at the bottom of the order (so it doesn't take over the card), or right after `anchorID`,
+    /// optionally starting with some to-dos (from a saved list).
     @discardableResult
-    func newList(name: String?, start: Date, end: Date?, after anchorID: String? = nil) -> String {
-        let list = TodoList(name: name, start: start, end: end)
+    func newList(name: String?, start: Date, end: Date?, after anchorID: String? = nil, items: [TodoItem] = []) -> String {
+        let list = TodoList(name: name, start: start, end: end, items: items)
         if let anchorID, let i = data.lists.firstIndex(where: { $0.id == anchorID }) {
             data.lists.insert(list, at: i + 1)
         } else {
