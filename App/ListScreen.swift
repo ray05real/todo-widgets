@@ -7,6 +7,7 @@ struct ListScreen: View {
     @State private var newTitle = ""
     @State private var newColor = 0
     @State private var editing: TodoItem?
+    @State private var editingTimes = false
     @FocusState private var adding: Bool
 
     var body: some View {
@@ -23,10 +24,21 @@ struct ListScreen: View {
         let suggestions = model.data.suggestions(for: list, at: .now)
         return List {
             Section {
-                TimelineView(.everyMinute) { timeline in
-                    TimeLabel(list: list, now: timeline.date)
-                        .foregroundStyle(.secondary)
+                // Tap to change when the list starts and ends.
+                Button {
+                    editingTimes = true
+                } label: {
+                    HStack {
+                        TimelineView(.everyMinute) { timeline in
+                            TimeLabel(list: list, now: timeline.date)
+                        }
+                        Spacer()
+                        Image(systemName: "calendar")
+                    }
+                    .foregroundStyle(.secondary)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
 
             Section {
@@ -136,6 +148,9 @@ struct ListScreen: View {
         .sheet(item: $editing) { item in
             ItemEditor(listID: list.id, item: item)
         }
+        .sheet(isPresented: $editingTimes) {
+            ListTimesEditor(list: list)
+        }
     }
 
     private func add(to list: TodoList) {
@@ -151,5 +166,57 @@ struct ListScreen: View {
         model.edit(list.id) { list in
             list.items += items.map { TodoItem(title: $0.title, color: $0.color, font: $0.font, size: $0.size) }
         }
+    }
+}
+
+/// Changing when a list starts and ends (tap the time line at the top of a list).
+struct ListTimesEditor: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+    let listID: String
+    @State private var start: Date
+    @State private var hasEnd: Bool
+    @State private var end: Date
+
+    init(list: TodoList) {
+        listID = list.id
+        _start = State(initialValue: list.start)
+        _hasEnd = State(initialValue: list.end != nil)
+        _end = State(initialValue: list.end ?? list.start.addingTimeInterval(86_400))
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    DatePicker("Starts", selection: $start)
+                }
+                Section {
+                    Toggle("Has an end", isOn: $hasEnd)
+                    if hasEnd {
+                        DatePicker("Ends", selection: $end, in: start.addingTimeInterval(60)...)
+                    }
+                }
+            }
+            .navigationTitle("List times")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let begins = start
+                        let ends = hasEnd ? max(end, start.addingTimeInterval(60)) : nil
+                        model.edit(listID) { list in
+                            list.start = begins
+                            list.end = ends
+                        }
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
