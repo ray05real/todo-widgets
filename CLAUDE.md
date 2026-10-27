@@ -87,4 +87,6 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - Widget taps after the first sometimes didn't register on iOS 27: iOS ignores taps while the last one's intent runs,
   so a tick only saves and returns: a widget tap leaves the reload to iOS (no reloadAllTimelines, which made a double
   reload), and the card update runs in a Task afterwards (renewing waits until a card is 6 hours old; opening the app
-  renews after 1).
+  renews after 1). Then widget taps moved to WidgetToggleIntent, a plain AppIntent that iOS runs in the widget
+  extension (no app to wake; it also tries CardContent.updateCards); card and Dynamic Island taps stay
+  ToggleItemIntent (LiveActivityIntent, in the app). The widget timeline is just now + the next change.

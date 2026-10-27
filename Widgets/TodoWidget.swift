@@ -138,7 +138,7 @@ struct HomeScreenWidget: View {
                             VStack(alignment: .leading, spacing: 0) {
                                 ForEach(column) { item in
                                     let itemLook = look.applied(to: item)
-                                    Toggle(isOn: item.done, intent: ToggleItemIntent(listID: list.id, itemID: item.id, source: "Home Screen widget")) {
+                                    Toggle(isOn: item.done, intent: WidgetToggleIntent(listID: list.id, itemID: item.id)) {
                                         Text(itemLook.display(item.title))
                                     }
                                     .toggleStyle(CheckToggleStyle(look: itemLook, color: item.color))
@@ -216,7 +216,7 @@ struct LockScreenWidget: View {
             let look = TextLook(font: entry.data.settings.text.font, size: 13, letterCase: entry.data.settings.text.letterCase)
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(list.window(height: 3) { _ in 1 }.items) { item in
-                    Toggle(isOn: item.done, intent: ToggleItemIntent(listID: list.id, itemID: item.id, source: "Lock Screen widget")) {
+                    Toggle(isOn: item.done, intent: WidgetToggleIntent(listID: list.id, itemID: item.id)) {
                         Text(look.display(item.title))
                     }
                     .toggleStyle(CheckToggleStyle(look: look))

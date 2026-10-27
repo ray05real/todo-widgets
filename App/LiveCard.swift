@@ -46,38 +46,6 @@ enum LiveCard {
 
     static var isRunning: Bool { !liveCards.isEmpty }
 
-    /// What a card shows: `list`, or "No list right now" when there's none.
-    static func state(for list: TodoList?, in data: TodoData, at now: Date = .now) -> TodoActivityAttributes.ContentState {
-        let card = data.settings.card
-        var look = data.settings.text
-        if let size = card.size { look.size = size }
-        let countdown = data.settings.showCountdown
-        guard let list else {
-            return TodoActivityAttributes.ContentState(
-                listID: nil, title: "TO DO", end: nil, items: [], first: 0, total: 0, left: 0,
-                look: look, card: card, showCountdown: countdown, nextReady: !data.planned(after: now).isEmpty
-            )
-        }
-        // A countdown at the bottom gets its own line under a column (one to-do fewer there); at the top it shares
-        // the title line.
-        let atBottom = countdown && list.end != nil && card.timerPlace != .topRight
-        let window = list.window(height: CardLayout.rowsHeight, columns: card.columns,
-                                 reserve: atBottom ? CardLayout.timerHeight : 0,
-                                 reserveFirst: card.timerPlace == .bottomLeft) {
-            look.applied(to: $0).cardRow
-        }
-        let items = window.items.map { (item: TodoItem) -> TodoItem in
-            var short = item
-            short.title = String(item.title.prefix(60))
-            return short
-        }
-        return TodoActivityAttributes.ContentState(
-            listID: list.id, title: list.headerTitle, end: list.end, items: items, first: window.start,
-            total: list.items.count, left: list.leftCount, look: look, card: card, showCountdown: countdown,
-            nextReady: data.next(after: list) != nil
-        )
-    }
-
     /// Brings the cards up to date: one following the top list, or one per list (Settings → Every list). Cards
     /// that are missing or over an hour old are replaced by new ones; cards no longer wanted are taken away.
     static func sync(_ data: TodoData, from source: String, forceRenew: Bool = false,
@@ -96,7 +64,7 @@ enum LiveCard {
             await card.end(nil, dismissalPolicy: .immediate)
         }
         for (id, list) in wanted {
-            let content = ActivityContent(state: state(for: list, in: data, at: now), staleDate: list?.end)
+            let content = ActivityContent(state: CardContent.state(for: list, in: data, at: now), staleDate: list?.end)
             let mine = liveCards.filter { $0.attributes.listID == id }
             if let card = mine.first, !forceRenew, now.timeIntervalSince(card.attributes.startedAt) < renewAfter {
                 await card.update(content)
