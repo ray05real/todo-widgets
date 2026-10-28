@@ -9,7 +9,14 @@ final class AppModel: ObservableObject {
 
     /// Picks up ticks made outside the app.
     func reload() {
-        data = TodoStore.loadData()
+        let (fresh, carried) = TodoStore.loadDataCarryingOver()
+        data = fresh
+        if carried { commit() }
+    }
+
+    /// Settings → "Carry over unfinished to-dos", while the app is open when a list ends.
+    func carryOverIfDue() {
+        if data.carryOver(at: .now) { commit() }
     }
 
     func commit() {

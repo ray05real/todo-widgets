@@ -105,6 +105,8 @@ struct TodoList: Codable, Hashable, Identifiable {
     var dismissed: [String] = []
     /// Whether it gets its own Lock Screen card when Settings is on "Every list".
     var showOnCard = true
+    /// Whether its unfinished to-dos have been carried over to the next list since it ended (Settings).
+    var carried = false
 
     func isRunning(at date: Date) -> Bool {
         start <= date && (end.map { date < $0 } ?? true)
@@ -168,6 +170,7 @@ extension TodoList {
         items = try c.decodeIfPresent([TodoItem].self, forKey: .items) ?? []
         dismissed = try c.decodeIfPresent([String].self, forKey: .dismissed) ?? []
         showOnCard = try c.decodeIfPresent(Bool.self, forKey: .showOnCard) ?? true
+        carried = try c.decodeIfPresent(Bool.self, forKey: .carried) ?? false
     }
 }
 
@@ -298,6 +301,9 @@ struct TodoSettings: Codable, Hashable {
     /// false: one card showing the top list (drag to reorder). true: a card for every running list that has
     /// "Show on the Lock Screen" on.
     var cardPerList = false
+    /// "Carry over unfinished to-dos": when it was switched on (nil = off). Only lists ending after this are carried
+    /// over, so switching it on doesn't drag in to-dos from lists that ended days ago.
+    var carryOverSince: Date?
 
     init() {}
 
@@ -314,6 +320,7 @@ struct TodoSettings: Codable, Hashable {
         planMinutes = try c.decodeIfPresent(Int.self, forKey: .planMinutes) ?? d.planMinutes
         keepCard = try c.decodeIfPresent(Bool.self, forKey: .keepCard) ?? d.keepCard
         cardPerList = try c.decodeIfPresent(Bool.self, forKey: .cardPerList) ?? d.cardPerList
+        carryOverSince = try c.decodeIfPresent(Date.self, forKey: .carryOverSince)
     }
 
     /// The next daily reset after `date`.
@@ -321,6 +328,12 @@ struct TodoSettings: Codable, Hashable {
         let time = DateComponents(hour: resetMinutes / 60, minute: resetMinutes % 60)
         return Calendar.current.nextDate(after: date, matching: time, matchingPolicy: .nextTime)
             ?? date.addingTimeInterval(86_400)
+    }
+
+    /// Whether `date` is at the daily reset time.
+    func isReset(_ date: Date) -> Bool {
+        let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+        return (parts.hour ?? 0) * 60 + (parts.minute ?? 0) == resetMinutes
     }
 }
 
@@ -410,6 +423,56 @@ struct TodoData: Codable, Hashable {
         return previous.items.filter {
             !$0.done && !have.contains($0.title.lowercased()) && !list.dismissed.contains($0.id)
         }
+    }
+
+    /// Settings → "Carry over unfinished to-dos": once a list has ended, its unfinished to-dos go onto the list with
+    /// the same name that starts when it ends (not ones already there or waved away). If there's none and it ended
+    /// at the daily reset, a new list is made for the new day with them, in its place in the order. Lists that
+    /// ended a while ago are caught up one day at a time. Returns whether anything changed.
+    ///
+    /// The app and every widget do this whenever they load the lists, whichever comes first after a list ends.
+    /// It comes out the same each time (the new list's id is worked out from the old one's and the to-dos keep
+    /// theirs), so two of them doing it at once make the very same list, not one each.
+    @discardableResult
+    mutating func carryOver(at now: Date) -> Bool {
+        guard let since = settings.carryOverSince else { return false }
+        var changed = false
+        while let i = lists.indices
+            .filter({ !lists[$0].carried && (lists[$0].end.map { $0 > since && $0 <= now } ?? false) })
+            .min(by: { lists[$0].end! < lists[$1].end! }) {
+            lists[i].carried = true
+            changed = true
+            let list = lists[i]
+            let end = list.end!
+            let left = list.items.filter { !$0.done }
+            guard !left.isEmpty else { continue }
+            if let n = lists.firstIndex(where: {
+                $0.id != list.id && ($0.name ?? "") == (list.name ?? "") && abs($0.start.timeIntervalSince(end)) < 60
+            }) {
+                let have = Set(lists[n].items.map { $0.title.lowercased() })
+                let dismissed = lists[n].dismissed
+                let adding = left.filter { !have.contains($0.title.lowercased()) && !dismissed.contains($0.id) }
+                lists[n].items += adding
+            } else if settings.isReset(end) {
+                let next = TodoList(id: Self.followingID(list.id), name: list.name, start: end,
+                                    end: settings.nextReset(after: end.addingTimeInterval(60)), items: left,
+                                    showOnCard: list.showOnCard)
+                lists.insert(next, at: i + 1)
+            }
+        }
+        return changed
+    }
+
+    /// The id of the list made from `id`'s leftovers: always the same for the same list.
+    private static func followingID(_ id: String) -> String {
+        var a: UInt64 = 0xcbf29ce484222325
+        var b: UInt64 = 0x84222325cbf29ce4
+        for byte in (id + "+1").utf8 {
+            a = (a ^ UInt64(byte)) &* 0x100000001b3
+            b = (b ^ UInt64(byte)) &* 0x100000001b3
+        }
+        let bytes = withUnsafeBytes(of: (a.bigEndian, b.bigEndian)) { Array($0) }
+        return NSUUID(uuidBytes: bytes).uuidString
     }
 
     /// Forgets lists that ended more than two weeks ago.

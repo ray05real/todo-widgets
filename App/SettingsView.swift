@@ -28,10 +28,14 @@ struct SettingsView: View {
 
             Section {
                 DatePicker("New list at", selection: time(\.resetMinutes), displayedComponents: .hourAndMinute)
+                Toggle("Carry over unfinished to-dos", isOn: Binding(
+                    get: { model.data.settings.carryOverSince != nil },
+                    set: { model.data.settings.carryOverSince = $0 ? .now : nil }
+                ))
             } header: {
                 Text("Daily reset")
             } footer: {
-                Tip("Lists end at this time, and a notification reminds you to make the next one.")
+                Tip("Lists end at this time, and a notification reminds you to make the next one. With carry over on, what's left on a list goes onto the next one, or onto a new list made for the new day if you haven't planned one.")
             }
 
             Section {

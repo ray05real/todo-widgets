@@ -79,6 +79,9 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .todoDataChanged)) { _ in
             model.reload()
         }
+        .onReceive(tick) { _ in
+            model.carryOverIfDue()
+        }
         .task {
             Reminders.ask()
             await LiveCard.sync(model.data, from: "app")
@@ -87,6 +90,9 @@ struct HomeView: View {
 
     /// The navigation value that opens Settings (list ids are UUIDs, so they can't clash with it).
     private static let settingsRoute = "settings"
+
+    /// Every half minute while the app is open: a list that has just ended gets its unfinished to-dos carried over.
+    private let tick = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     private func lists(at now: Date) -> some View {
         let running = model.data.running(at: now)

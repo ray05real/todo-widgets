@@ -17,7 +17,10 @@ enum Reminders {
         for list in data.lists {
             guard let end = list.end, end > now else { continue }
             let content = UNMutableNotificationContent()
-            if let next = data.next(after: list) {
+            // With "Carry over unfinished to-dos" on, the next list may be made (or filled) only when this one ends.
+            var then = data
+            then.carryOver(at: end)
+            if let next = then.next(after: list) {
                 content.title = "Your next list has started"
                 content.body = next.items.isEmpty
                     ? "It's empty so far. Tap to fill it in."

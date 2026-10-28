@@ -41,12 +41,24 @@ struct TodoProvider: TimelineProvider {
         // One entry now and one for the next moment a list starts or ends (then iOS asks again), so the widget
         // switches lists on time. Only two: iOS draws every entry after each tap and ignores taps until it's done,
         // and drawing up to 21 at extra-large size held taps up for about 5 seconds.
-        let data = TodoStore.loadData()
         let now = Date.now
+        let (data, carried) = TodoStore.loadDataCarryingOver(at: now)
         let next = data.changes(after: now).first
         var entries = [TodoEntry(date: now, data: data, rank: rank)]
-        if let next { entries.append(TodoEntry(date: next, data: data, rank: rank)) }
-        completion(Timeline(entries: entries, policy: next == nil ? .never : .atEnd))
+        if let next {
+            // With "Carry over unfinished to-dos" on, the list made when this one ends shows straight away (it comes
+            // out the same when it's saved later, so ticks on it land).
+            var then = data
+            then.carryOver(at: next)
+            entries.append(TodoEntry(date: next, data: then, rank: rank))
+        }
+        let timeline = Timeline(entries: entries, policy: next == nil ? .never : .atEnd)
+        guard carried else { return completion(timeline) }
+        // A list was just carried over: the Lock Screen card follows, if iOS lets the widget reach it.
+        Task {
+            await CardContent.updateCards(with: data)
+            completion(timeline)
+        }
     }
 }
 

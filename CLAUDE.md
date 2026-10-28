@@ -90,3 +90,13 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   renews after 1). Then widget taps moved to WidgetToggleIntent, a plain AppIntent that iOS runs in the widget
   extension (no app to wake; it also tries CardContent.updateCards); card and Dynamic Island taps stay
   ToggleItemIntent (LiveActivityIntent, in the app). The widget timeline is just now + the next change.
+
+## Carry over (28 Oct 2026)
+- Settings → Daily reset → "Carry over unfinished to-dos" (off by default; `TodoSettings.carryOverSince` = when it was
+  switched on, so older lists aren't dragged in). Once a list ends, its unfinished to-dos go onto the list with the
+  same name that starts when it ends; if there's none and it ended at the reset, a new list is made for the new day
+  (`TodoData.carryOver(at:)`, `TodoList.carried` marks it done).
+- No app runs at the reset, so it happens lazily in `TodoStore.loadDataCarryingOver` (app, widgets, intents) and on a
+  30 s timer while the app is open. It's deterministic (the new list's id is hashed from the old one's, to-dos keep
+  their ids), so several widgets doing it at once save the same thing. The widget's entry at the next change already
+  shows the carried-over list; the notification at a list's end looks ahead the same way.

@@ -41,6 +41,19 @@ enum TodoStore {
     static var lastKeychainStatus: OSStatus = errSecSuccess
 
     static func loadData() -> TodoData {
+        loadDataCarryingOver().data
+    }
+
+    /// The lists, with unfinished to-dos carried over first if a list has ended (Settings), which is saved straight
+    /// away so the app and the widgets all see it. `carried` says whether that just happened.
+    static func loadDataCarryingOver(at now: Date = .now) -> (data: TodoData, carried: Bool) {
+        var data = decodedData()
+        let carried = data.carryOver(at: now)
+        if carried { saveData(data) }
+        return (data, carried)
+    }
+
+    private static func decodedData() -> TodoData {
         guard let raw = readData() else { return TodoData() }
         if let data = try? JSONDecoder().decode(TodoData.self, from: raw) { return data }
         // The first test version kept one plain list of to-dos.
