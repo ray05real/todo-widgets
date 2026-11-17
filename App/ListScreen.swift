@@ -226,9 +226,8 @@ struct ListScreen: View {
     }
 }
 
-/// A to-do in a list. Tap it to change its words right there (the keyboard opens); while it's being changed, its
-/// colour, font and size show under it. The circle shows whether it's ticked: ticking happens on the widgets, the
-/// Lock Screen card and the Dynamic Island.
+/// A to-do in a list. Tap its words to change them right there (the keyboard opens); while it's being changed, its
+/// colour, font and size show under it. Tap its circle to tick or untick it.
 struct EditableItemRow: View {
     @EnvironmentObject private var model: AppModel
     let listID: String
@@ -243,9 +242,22 @@ struct EditableItemRow: View {
         let tint = Palette.color(item.color)
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: look.circle + 2))
-                    .foregroundStyle(tint.opacity(item.done ? 0.55 : 0.9))
+                // The circle itself ticks and unticks (tapping the words changes them). Unticking also brings a to-do
+                // cleared off the card and the widgets back onto them.
+                Button {
+                    change { todo in
+                        todo.done.toggle()
+                        if !todo.done { todo.cleared = false }
+                    }
+                } label: {
+                    Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: look.circle + 2))
+                        .foregroundStyle(tint.opacity(item.done ? 0.55 : 0.9))
+                        .frame(minWidth: 30, minHeight: 30)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.borderless)
+                .accessibilityLabel(item.done ? "Untick" : "Tick")
                 // The words as typed while changing them; otherwise as they show everywhere (capitals, crossed out).
                 ZStack(alignment: .leading) {
                     TextField("To-do", text: $draft, axis: .vertical)
@@ -348,8 +360,8 @@ struct ListTimesEditor: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        let begins = start
-                        let ends = hasEnd ? max(end, start.addingTimeInterval(60)) : nil
+                        let begins = start.wholeMinute
+                        let ends = hasEnd ? max(end, start.addingTimeInterval(60)).wholeMinute : nil
                         model.edit(listID) { list in
                             list.start = begins
                             list.end = ends

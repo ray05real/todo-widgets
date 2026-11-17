@@ -123,11 +123,16 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   leave the card and widgets (`TodoList.onShow`), so hidden ones move up. Unticking clears `cleared`. The small Lock
   Screen widget under the clock has no room for it: with the setting on it just skips ticked to-dos.
   Intents: `WidgetClearIntent` (widget extension) and `ClearTickedIntent` (LiveActivityIntent, in the app).
-- Once every to-do is ticked, the card's top line asks "All done?" with a green Yes (`FinishListIntent`): the list's
-  `cardDismissed` is set and LiveCard.sync ends its card (`TodoList.cardGone` = dismissed and nothing left). It comes
-  back if the list gets something left to do; the next list's card appears when the app next runs (an app can't start
-  a Live Activity from the background without push).
+- The last Clear takes the card away: when clearing leaves nothing to do, the list's `cardDismissed` is set and its
+  card ends (LiveCard.sync in the app; `CardContent.updateCards` from a widget's Clear). `TodoList.cardGone` = dismissed
+  and nothing left. It comes back if the list gets something left to do; the next list's card appears when the app
+  next runs (an app can't start a Live Activity from the background without push). An "All done? Yes" prompt was tried
+  in 0.41 and dropped for this (owner).
+- In the app, the circle of a to-do ticks and unticks it (the words still open editing); unticking brings a cleared
+  to-do back onto the card and widgets.
 - `ContentState` gained `showClear` / `allDone` with a decodeIfPresent decoder, so cards already up keep showing.
+- New lists and list times are kept to whole minutes (`Date.wholeMinute`; the pickers kept hidden seconds), and the
+  first screen sorts by the real time rather than TimelineView's minute start, so a list made "now" is under Now at once.
 
 ## Carry over (28 Oct 2026)
 - Settings → Daily reset → "Carry over unfinished to-dos" (off by default; `TodoSettings.carryOverSince` = when it was

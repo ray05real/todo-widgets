@@ -73,27 +73,6 @@ struct ClearTickedIntent: LiveActivityIntent {
     }
 }
 
-/// "All done?" → Yes on the Lock Screen card: the card goes away.
-struct FinishListIntent: LiveActivityIntent {
-    static var title: LocalizedStringResource = "Finish a list"
-    static var isDiscoverable = false
-
-    @Parameter(title: "List") var listID: String
-
-    init() {}
-
-    init(listID: String) {
-        self.listID = listID
-    }
-
-    func perform() async throws -> some IntentResult {
-        #if !WIDGET_EXTENSION
-        await TodoActions.finish(listID: listID)
-        #endif
-        return .result()
-    }
-}
-
 struct ToggleItemIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Tick a to-do"
 

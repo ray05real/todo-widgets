@@ -18,8 +18,10 @@ struct HomeView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            TimelineView(.everyMinute) { timeline in
-                lists(at: timeline.date)
+            // Redrawn every minute, but sorted by the real time: the timeline's own date is the start of the minute,
+            // which left a list made "now" under Planned for up to a minute.
+            TimelineView(.everyMinute) { _ in
+                lists(at: .now)
             }
             .alert("Rename list", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
                 TextField("Name", text: $nameDraft)

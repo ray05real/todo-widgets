@@ -1,5 +1,13 @@
 import Foundation
 
+extension Date {
+    /// This time with the seconds taken off. Time pickers show minutes but keep the seconds they started with, so a
+    /// list set to start "now" could start up to a minute later.
+    var wholeMinute: Date {
+        Calendar.current.dateInterval(of: .minute, for: self)?.start ?? self
+    }
+}
+
 /// One to-do.
 struct TodoItem: Codable, Hashable, Identifiable {
     var id: String

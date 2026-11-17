@@ -25,19 +25,13 @@ enum TodoActions {
         Task { await LiveCard.sync(data, from: source, renewAfter: LiveCard.renewAfterTick) }
     }
 
-    /// The Clear button on the card or in the Dynamic Island.
+    /// The Clear button on the card or in the Dynamic Island (the last Clear, with nothing left to do, takes the card
+    /// away: sync leaves it off).
     @MainActor static func clearTicked(listID: String, from source: String) async {
         let data = TodoStore.clearTicked(listID: listID)
         WidgetCenter.shared.reloadAllTimelines()
         NotificationCenter.default.post(name: .todoDataChanged, object: nil)
         Task { await LiveCard.sync(data, from: source, renewAfter: LiveCard.renewAfterTick) }
-    }
-
-    /// "All done?" → Yes: the list's card is taken away (sync leaves it off from now on).
-    @MainActor static func finish(listID: String) async {
-        let data = TodoStore.dismissCard(listID: listID)
-        NotificationCenter.default.post(name: .todoDataChanged, object: nil)
-        await LiveCard.sync(data, from: "Lock Screen card", renewAfter: LiveCard.renewAfterTick)
     }
 
     @MainActor static func renewCard(from source: String) async {
@@ -71,8 +65,9 @@ enum LiveCard {
         }
         let now = Date.now
         // nil = the one card that follows the top list (it shows "No list right now" when there's none). No card for a
-        // list confirmed as all done ("All done?" → Yes) until it has something left to do or the next list starts
-        // (the card comes back when the app next runs: iPhone doesn't let an app put a card up from the background).
+        // finished list whose last ticked to-dos were cleared, until it has something left to do or the next list
+        // starts (the card comes back when the app next runs: iPhone doesn't let an app put a card up from the
+        // background).
         let top = data.current(at: now)
         let wanted: [(id: String?, list: TodoList?)] = data.settings.cardPerList
             ? data.listsOnCards(at: now).map { (id: $0.id, list: $0) }

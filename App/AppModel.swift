@@ -82,7 +82,8 @@ final class AppModel: ObservableObject {
     /// optionally starting with some to-dos (from a saved list).
     @discardableResult
     func newList(name: String?, start: Date, end: Date?, after anchorID: String? = nil, items: [TodoItem] = []) -> String {
-        let list = TodoList(name: name, start: start, end: end, items: items)
+        // Whole minutes (the time pickers keep hidden seconds): a list set to start this minute starts at once.
+        let list = TodoList(name: name, start: start.wholeMinute, end: end?.wholeMinute, items: items)
         if let anchorID, let i = data.lists.firstIndex(where: { $0.id == anchorID }) {
             data.lists.insert(list, at: i + 1)
         } else {

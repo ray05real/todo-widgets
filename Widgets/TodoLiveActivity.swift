@@ -137,27 +137,6 @@ struct ClearButtonLabel: View {
     }
 }
 
-/// "All done?" with a Yes button, once every to-do on the list is ticked: Yes takes the card away.
-struct AllDonePrompt: View {
-    let listID: String
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text("All done?")
-                .font(.system(size: 12, weight: .semibold))
-            Button(intent: FinishListIntent(listID: listID)) {
-                Text("Yes")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(Color.black.opacity(0.85))
-                    .padding(.horizontal, 10)
-                    .frame(height: 18)
-                    .background(Color.green, in: Capsule())
-            }
-            .buttonStyle(.plain)
-        }
-    }
-}
-
 /// The countdown's look everywhere: the size and brightness of a notification's "6m ago" (11 looked too small and
 /// faint, 15 too big).
 struct TimerText: View {
@@ -221,21 +200,18 @@ struct LockScreenCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 TitleBadge(title: state.title)
-                if let id = state.listID, state.allDone, !context.isStale {
-                    AllDonePrompt(listID: id)
-                } else {
-                    if state.total > state.first + state.items.count {
-                        // How many to-dos come after the ones on show (the ones before are all ticked).
-                        Text("+\(state.total - state.first - state.items.count) more")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                if state.total > state.first + state.items.count {
+                    // How many to-dos come after the ones on show (the ones before are all ticked).
+                    Text("+\(state.total - state.first - state.items.count) more")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                // Once everything's ticked, this last Clear takes the whole card away.
+                if let id = state.listID, state.showClear, !context.isStale, state.items.contains(where: { $0.done }) {
+                    Button(intent: ClearTickedIntent(listID: id, source: "Lock Screen card")) {
+                        ClearButtonLabel()
                     }
-                    if let id = state.listID, state.showClear, !context.isStale, state.items.contains(where: { $0.done }) {
-                        Button(intent: ClearTickedIntent(listID: id, source: "Lock Screen card")) {
-                            ClearButtonLabel()
-                        }
-                        .buttonStyle(.plain)
-                    }
+                    .buttonStyle(.plain)
                 }
                 Spacer(minLength: 0)
                 if let end = state.end, timerShown, place == .topRight {

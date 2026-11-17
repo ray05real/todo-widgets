@@ -52,6 +52,11 @@ enum CardContent {
             } else {
                 list = data.current(at: now)
             }
+            // A finished list whose last ticked to-dos were cleared: its card goes away.
+            if list?.cardGone == true {
+                await card.end(nil, dismissalPolicy: .immediate)
+                continue
+            }
             await card.update(ActivityContent(state: state(for: list, in: data, at: now), staleDate: list?.end))
         }
     }
