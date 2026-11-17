@@ -127,7 +127,7 @@ struct ListScreen: View {
                 } header: {
                     Text("Pinned")
                 } footer: {
-                    Tip("+ adds it to this list, × skips it here. Swipe left to unpin it.")
+                    Tip("+ adds it to this list. Swipe left to unpin it.")
                 }
             }
 
@@ -135,6 +135,15 @@ struct ListScreen: View {
                 Section {
                     ForEach(suggestions) { item in
                         offerRow(item, look: look, in: list, plus: .green)
+                            // Swipe left to leave it behind (gone from this list's offers), like deleting a to-do.
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    model.edit(list.id) { $0.dismissed.append(item.id) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                                .labelStyle(.iconOnly)
+                            }
                     }
                     if suggestions.count > 1 {
                         Button("Bring all \(suggestions.count) over") { bringOver(suggestions, to: list) }
@@ -142,7 +151,7 @@ struct ListScreen: View {
                 } header: {
                     Text("Not finished last time")
                 } footer: {
-                    Tip("+ brings it over, × leaves it behind.")
+                    Tip("+ brings it over. Swipe left to leave it behind.")
                 }
             }
         }
@@ -183,8 +192,8 @@ struct ListScreen: View {
         }
     }
 
-    /// A to-do offered for this list (pinned, with a red +, or not finished last time, with a green one): + adds it,
-    /// × leaves it off this list.
+    /// A to-do offered for this list (pinned, with a red +, or not finished last time, with a green one): + adds it.
+    /// Swiping left removes it instead (the × that did that was dropped, owner 17 Nov 2026).
     private func offerRow(_ item: TodoItem, look: TextLook, in list: TodoList, plus: Color) -> some View {
         HStack(spacing: 14) {
             Text(look.display(item.title))
@@ -198,13 +207,6 @@ struct ListScreen: View {
             }
             .buttonStyle(.borderless)
             .tint(plus)
-            Button {
-                model.edit(list.id) { $0.dismissed.append(item.id) }
-            } label: {
-                Image(systemName: "xmark.circle").font(.title2)
-            }
-            .buttonStyle(.borderless)
-            .tint(Color.secondary)
         }
     }
 

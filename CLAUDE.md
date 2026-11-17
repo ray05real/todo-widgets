@@ -36,7 +36,7 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   end, or no end) and a countdown ("resets in 2 hrs, 13 min"; the hourglass alone confused the owner) in the corner.
   The card and widgets title a daily list "TO DO:" (a named one "SHOPPING:"). Lists can be planned ahead; a planned list takes over
   when the current one ends. Widgets follow the current list or a named one (Edit Widget).
-- Unfinished to-dos are **not** carried over automatically: they're offered at the top of the next list (+ / ×).
+- Unfinished to-dos are **not** carried over automatically: they're offered on the next list (+ adds, swipe left removes).
 - A notification when a list ends; an optional daily "plan your next list" reminder.
 
 ## The Lock Screen card (owner's notes, 26 Oct 2026)
@@ -102,8 +102,9 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - Saving runs in the background (`TodoStore.saveDataSoon`, a serial queue; reads wait for it), so dropping a dragged
   to-do or list doesn't hitch.
 - Pinned to-dos (`TodoData.permanent`, matched by their words): swipe a to-do left → Pin (Unpin if it already is).
-  Every list that hasn't ended offers them in a "Pinned" section (a red + adds, × skips it on that list via
-  `dismissed`, swipe left = Unpin, "Add all"). They're left out of "Not finished last time" (green +).
+  Every list that hasn't ended offers them in a "Pinned" section (a red + adds, swipe left = Unpin, "Add all").
+  They're left out of "Not finished last time" (green +; swipe left = Delete, which leaves it behind via `dismissed`).
+  No × buttons on these rows (owner, 17 Nov 2026).
 - To-do swipe buttons are icons only: on iOS 26 a button's word sits beside its icon on short rows and under it on
   tall ones (the first screen's taller rows), so with words the buttons, and how far the row slid, changed row to row.
 - Tapping a to-do scrolls it straight away (no waiting for the keyboard) so its words sit about halfway between the top
