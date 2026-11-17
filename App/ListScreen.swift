@@ -147,14 +147,17 @@ struct ListScreen: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
-        // While a to-do is being changed, room below the list, so even the last to-do can scroll up to the top.
+        // While a to-do is being changed, room below the list, so even the last to-do can scroll up.
         .contentMargins(.bottom, isEditingItem ? 420 : 0, for: .scrollContent)
         .onChange(of: focus) { _, field in
             guard case .item(let id)? = field else { return }
-            // Straight away (the next frame, once that room is there): the tapped to-do goes to the top of the screen,
-            // with its colour, font and size under it, so the keyboard coming up never covers them.
+            // Straight away (the next frame, once that room is there), without waiting for the keyboard: the tapped
+            // to-do's words land about halfway between the top bar and where the keyboard will be (the owner's
+            // choice), with its colour, font and size still clear of the keyboard. scrollTo lines up the point 35% down
+            // the to-do with the point 35% down the screen; with the keyboard taking the lower ~40% that puts the words
+            // near the middle of what's left.
             DispatchQueue.main.async {
-                withAnimation(.snappy(duration: 0.3)) { scroller.scrollTo(id, anchor: .top) }
+                withAnimation(.snappy(duration: 0.3)) { scroller.scrollTo(id, anchor: UnitPoint(x: 0.5, y: 0.35)) }
             }
         }
         }

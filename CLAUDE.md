@@ -106,7 +106,8 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   `dismissed`, swipe left = Unpin, "Add all"). They're left out of "Not finished last time" (green +).
 - To-do swipe buttons are icons only: on iOS 26 a button's word sits beside its icon on short rows and under it on
   tall ones (the first screen's taller rows), so with words the buttons, and how far the row slid, changed row to row.
-- Tapping a to-do scrolls it straight to the top of the screen (no waiting for the keyboard), with its colour/font/size
+- Tapping a to-do scrolls it straight away (no waiting for the keyboard) so its words sit about halfway between the top
+  bar and the keyboard (owner, 17 Nov; the top of the screen felt wrong), anchor 0.35, with its colour/font/size
   controls under it; while one is being changed the list gets 420 pt of room at the bottom so the last ones can go up too.
 - No "Done" bar above the keyboard (added in 0.36, removed in 0.39: on iOS 26 it floats as a glass button over the list
   and covered the controls). The keyboard's own blue ✓ finishes, and scrolling the list puts the keyboard away.
