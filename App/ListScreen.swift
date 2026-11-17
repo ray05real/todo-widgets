@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// One list: a box to add to-dos at the top, then its to-dos (tap one to change it, drag ≡ to move it), then
-/// permanent to-dos and unfinished ones from last time to bring over.
+/// One list: a box to add to-dos at the top, then its to-dos (tap one to change it, hold and drag to move it), then
+/// pinned to-dos and unfinished ones from last time to bring over.
 struct ListScreen: View {
     @EnvironmentObject private var model: AppModel
     let listID: String
@@ -12,22 +12,12 @@ struct ListScreen: View {
     @State private var newSize: Double?
     @State private var editingTimes = false
     @FocusState private var focus: Field?
-    /// While a ≡ handle is held: the to-dos in their new order (saved when it's let go), the one being moved, and how
-    /// far the finger has gone in rows already passed.
-    @State private var dragOrder: [String]?
-    @State private var dragging: String?
-    @State private var dragPassed: CGFloat = 0
-    /// Each to-do's height, so a dragged one swaps places once the finger passes the middle of the next.
-    @State private var rowHeights: [String: CGFloat] = [:]
 
     /// What the keyboard is typing into: the Add box or one of the to-dos.
     enum Field: Hashable {
         case add
         case item(String)
     }
-
-    /// Space above and below each to-do inside its row (part of its height when dragging).
-    private static let rowInset: CGFloat = 8
 
     var body: some View {
         if let list = model.list(listID) {
@@ -42,8 +32,8 @@ struct ListScreen: View {
         let look = model.data.settings.text
         let permanent = model.data.permanentSuggestions(for: list, at: .now)
         let suggestions = model.data.suggestions(for: list, at: .now)
-        let items = dragOrder.map { order in order.compactMap { id in list.items.first { $0.id == id } } } ?? list.items
-        return List {
+        return ScrollViewReader { scroller in
+        List {
             Section {
                 // Tap to change when the list starts and ends.
                 Button {
@@ -78,72 +68,68 @@ struct ListScreen: View {
             }
 
             Section {
-                ForEach(items) { item in
-                    HStack(spacing: 6) {
-                        EditableItemRow(listID: list.id, item: item, look: look.applied(to: item), focus: $focus)
-                            .background {
-                                GeometryReader { geo in
-                                    Color.clear
-                                        .onAppear { rowHeights[item.id] = geo.size.height }
-                                        .onChange(of: geo.size.height) { _, height in rowHeights[item.id] = height }
+                ForEach(list.items) { item in
+                    EditableItemRow(listID: list.id, item: item, look: look.applied(to: item), focus: $focus)
+                        // Swiping left, like a chat in WhatsApp: a short swipe shows Pin and Delete, a long swipe
+                        // deletes. Icons only: iOS puts a button's word beside its icon on short rows and under it on
+                        // tall ones, so with words the buttons (and how far the row slides) changed size row to row.
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                model.edit(list.id) { list in list.items.removeAll { $0.id == item.id } }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .labelStyle(.iconOnly)
+                            Button {
+                                model.togglePermanent(item)
+                            } label: {
+                                if model.data.isPermanent(item) {
+                                    Label("Unpin", systemImage: "pin.slash.fill")
+                                } else {
+                                    Label("Pin", systemImage: "pin.fill")
                                 }
                             }
-                        dragHandle(for: item, in: list)
-                    }
-                    .listRowInsets(EdgeInsets(top: Self.rowInset, leading: 20, bottom: Self.rowInset, trailing: 4))
-                    .listRowBackground(dragging == item.id ? Color.accentColor.opacity(0.18) : Color(.secondarySystemGroupedBackground))
-                    // Swiping left, like a chat in WhatsApp: a short swipe shows Make permanent and Delete, a long
-                    // swipe deletes.
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) {
-                            model.edit(list.id) { list in list.items.removeAll { $0.id == item.id } }
-                        } label: {
-                            Label("Delete", systemImage: "trash")
+                            .labelStyle(.iconOnly)
+                            .tint(Color.orange)
                         }
-                        Button {
-                            model.togglePermanent(item)
-                        } label: {
-                            if model.data.isPermanent(item) {
-                                Label("Not permanent", systemImage: "pin.slash")
-                            } else {
-                                Label("Make permanent", systemImage: "pin")
-                            }
-                        }
-                        .tint(Color.orange)
-                    }
+                }
+                // Hold a to-do and drag it to move it: iOS's own lift-and-drag, smooth and only after a hold.
+                .onMove { from, to in
+                    model.edit(list.id) { $0.items.move(fromOffsets: from, toOffset: to) }
                 }
             } footer: {
                 if !list.items.isEmpty {
-                    Tip("Tap a to-do to change it, drag ≡ to move it, swipe left to make it permanent or delete it.")
+                    Tip("Tap a to-do to change it, hold and drag to move it, swipe left to pin or delete it.")
                 }
             }
 
             if !permanent.isEmpty {
                 Section {
                     ForEach(permanent) { item in
-                        offerRow(item, look: look, in: list)
+                        offerRow(item, look: look, in: list, plus: .red)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     model.removePermanent(item.id)
                                 } label: {
-                                    Label("Not permanent", systemImage: "pin.slash")
+                                    Label("Unpin", systemImage: "pin.slash.fill")
                                 }
+                                .labelStyle(.iconOnly)
                             }
                     }
                     if permanent.count > 1 {
                         Button("Add all \(permanent.count)") { bringOver(permanent, to: list) }
                     }
                 } header: {
-                    Text("Permanent")
+                    Text("Pinned")
                 } footer: {
-                    Tip("+ adds it to this list, × skips it here. Swipe left to stop it being permanent.")
+                    Tip("+ adds it to this list, × skips it here. Swipe left to unpin it.")
                 }
             }
 
             if !suggestions.isEmpty {
                 Section {
                     ForEach(suggestions) { item in
-                        offerRow(item, look: look, in: list)
+                        offerRow(item, look: look, in: list, plus: .green)
                     }
                     if suggestions.count > 1 {
                         Button("Bring all \(suggestions.count) over") { bringOver(suggestions, to: list) }
@@ -156,8 +142,15 @@ struct ListScreen: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
-        .scrollDisabled(dragging != nil)
-        .sensoryFeedback(.selection, trigger: dragOrder)
+        .onChange(of: focus) { _, field in
+            guard case .item(let id)? = field else { return }
+            // Once the keyboard is up, bring the tapped to-do (and its colour, font and size under it) above it.
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(350))
+                withAnimation { scroller.scrollTo(id, anchor: UnitPoint(x: 0.5, y: 0.08)) }
+            }
+        }
+        }
         .navigationTitle(list.displayName(at: .now))
         .toolbar {
             // Rename, Delete and Save moved to swiping the list on the first screen.
@@ -184,8 +177,9 @@ struct ListScreen: View {
         }
     }
 
-    /// A to-do offered for this list (permanent, or not finished last time): + adds it, × leaves it off this list.
-    private func offerRow(_ item: TodoItem, look: TextLook, in list: TodoList) -> some View {
+    /// A to-do offered for this list (pinned, with a red +, or not finished last time, with a green one): + adds it,
+    /// × leaves it off this list.
+    private func offerRow(_ item: TodoItem, look: TextLook, in list: TodoList, plus: Color) -> some View {
         HStack(spacing: 14) {
             Text(look.display(item.title))
                 .font(look.applied(to: item).swiftUIFont)
@@ -197,7 +191,7 @@ struct ListScreen: View {
                 Image(systemName: "plus.circle.fill").font(.title2)
             }
             .buttonStyle(.borderless)
-            .tint(Color.green)
+            .tint(plus)
             Button {
                 model.edit(list.id) { $0.dismissed.append(item.id) }
             } label: {
@@ -206,68 +200,6 @@ struct ListScreen: View {
             .buttonStyle(.borderless)
             .tint(Color.secondary)
         }
-    }
-
-    /// The ≡ on the right of a to-do: hold it and drag up or down to move the to-do (the standard way on iPhone, so
-    /// holding the row itself no longer moves it).
-    private func dragHandle(for item: TodoItem, in list: TodoList) -> some View {
-        Image(systemName: "line.3.horizontal")
-            .font(.body.weight(.medium))
-            .foregroundStyle(.tertiary)
-            .frame(width: 40, height: 40)
-            .contentShape(Rectangle())
-            .gesture(
-                // Measured on the whole screen: the handle itself moves as the to-do swaps places.
-                DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                    .onChanged { value in drag(item.id, by: value.translation.height, in: list) }
-                    .onEnded { _ in endDrag(in: list) }
-            )
-            .accessibilityLabel("Move")
-    }
-
-    private func height(of id: String) -> CGFloat {
-        (rowHeights[id] ?? 28) + Self.rowInset * 2
-    }
-
-    /// Moves the dragged to-do past each neighbour whose middle the finger has crossed.
-    private func drag(_ id: String, by dy: CGFloat, in list: TodoList) {
-        if dragging == nil {
-            focus = nil
-            dragging = id
-            dragPassed = 0
-        }
-        var order = dragOrder ?? list.items.map(\.id)
-        guard var i = order.firstIndex(of: id) else { return }
-        var left = dy - dragPassed
-        while left > 0, i + 1 < order.count, left > height(of: order[i + 1]) / 2 {
-            let h = height(of: order[i + 1])
-            order.swapAt(i, i + 1)
-            i += 1
-            dragPassed += h
-            left -= h
-        }
-        while left < 0, i > 0, -left > height(of: order[i - 1]) / 2 {
-            let h = height(of: order[i - 1])
-            order.swapAt(i, i - 1)
-            i -= 1
-            dragPassed -= h
-            left += h
-        }
-        if order != dragOrder {
-            withAnimation(.snappy(duration: 0.18)) { dragOrder = order }
-        }
-    }
-
-    private func endDrag(in list: TodoList) {
-        if let order = dragOrder, order != list.items.map(\.id) {
-            model.edit(list.id) { list in
-                let byID = Dictionary(uniqueKeysWithValues: list.items.map { ($0.id, $0) })
-                list.items = order.compactMap { byID[$0] } + list.items.filter { !order.contains($0.id) }
-            }
-        }
-        dragOrder = nil
-        dragging = nil
-        dragPassed = 0
     }
 
     private func add(to list: TodoList) {
@@ -316,6 +248,8 @@ struct EditableItemRow: View {
                         .focused(focus, equals: .item(item.id))
                         .submitLabel(.done)
                         .opacity(isEditing ? 1 : 0)
+                        // Hidden, it mustn't catch touches: holding the row is how it's dragged.
+                        .allowsHitTesting(isEditing)
                     if !isEditing {
                         Text(look.display(item.title))
                             .font(look.swiftUIFont)

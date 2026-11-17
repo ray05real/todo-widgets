@@ -40,6 +40,18 @@ enum TodoStore {
     /// The last keychain result (0 = fine, -34018 = not allowed by the certificate).
     static var lastKeychainStatus: OSStatus = errSecSuccess
 
+    /// The app saves its changes in the background, in order, so the screen never waits for the save (dropping a
+    /// dragged to-do or list stays smooth). Reading waits for any save still going, so it never reads old lists.
+    private static let writes = DispatchQueue(label: "todo.store.writes", qos: .userInitiated)
+
+    /// Saves in the background, then runs `then` (e.g. telling the widgets).
+    static func saveDataSoon(_ data: TodoData, then: @escaping () -> Void = {}) {
+        writes.async {
+            saveData(data)
+            then()
+        }
+    }
+
     static func loadData() -> TodoData {
         loadDataCarryingOver().data
     }
@@ -47,6 +59,7 @@ enum TodoStore {
     /// The lists, with unfinished to-dos carried over first if a list has ended (Settings), which is saved straight
     /// away so the app and the widgets all see it. `carried` says whether that just happened.
     static func loadDataCarryingOver(at now: Date = .now) -> (data: TodoData, carried: Bool) {
+        writes.sync {}
         var data = decodedData()
         let carried = data.carryOver(at: now)
         if carried { saveData(data) }

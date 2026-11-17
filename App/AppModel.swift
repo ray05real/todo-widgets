@@ -21,10 +21,12 @@ final class AppModel: ObservableObject {
 
     func commit() {
         data.prune()
-        TodoStore.saveData(data)
-        WidgetCenter.shared.reloadAllTimelines()
-        Reminders.reschedule(data)
         let snapshot = data
+        // Saved in the background, so the screen (e.g. dropping a dragged to-do) never waits for it.
+        TodoStore.saveDataSoon(snapshot) {
+            WidgetCenter.shared.reloadAllTimelines()
+            Reminders.reschedule(snapshot)
+        }
         Task { await LiveCard.sync(snapshot, from: "app") }
     }
 

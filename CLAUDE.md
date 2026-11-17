@@ -97,13 +97,16 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - Tapping a to-do in the app changes it (the keyboard opens in place; its colour, font and own-size controls show under
   it while it's being changed). It no longer ticks it: ticking is for the widgets, the card and the Dynamic Island; the
   circle only shows the state. The Edit sheet and the press-and-hold menu are gone.
-- Reordering is the iPhone-standard ≡ handle on the right of every to-do, always shown (no Edit button, no
-  press-and-hold drag). SwiftUI only shows real reorder handles in edit mode, which turns swipe actions off, so the
-  handle is our own DragGesture (global coordinates) that swaps the to-do past each neighbour whose middle the finger
-  crosses (row heights are measured), and saves the order on release.
-- Permanent to-dos (`TodoData.permanent`, matched by their words): swipe a to-do left → Make permanent (Not permanent
-  if it already is). Every list that hasn't ended offers them in a "Permanent" section (+ adds, × skips it on that
-  list via `dismissed`, swipe left = Not permanent, "Add all"). They're left out of "Not finished last time".
+- Reordering: hold a to-do and drag (iOS's own `.onMove` lift-and-drag). A custom always-shown ≡ handle was tried
+  in 0.36 and dropped: the owner kept moving to-dos by accident and found it laggy. No Edit button.
+- Saving runs in the background (`TodoStore.saveDataSoon`, a serial queue; reads wait for it), so dropping a dragged
+  to-do or list doesn't hitch.
+- Pinned to-dos (`TodoData.permanent`, matched by their words): swipe a to-do left → Pin (Unpin if it already is).
+  Every list that hasn't ended offers them in a "Pinned" section (a red + adds, × skips it on that list via
+  `dismissed`, swipe left = Unpin, "Add all"). They're left out of "Not finished last time" (green +).
+- To-do swipe buttons are icons only: on iOS 26 a button's word sits beside its icon on short rows and under it on
+  tall ones (the first screen's taller rows), so with words the buttons, and how far the row slid, changed row to row.
+- Tapping a to-do low on the screen scrolls it (and its colour/font/size controls) above the keyboard.
 - The Add box has "Its own size" (with the slider) next to colour and font. Settings' card toggle is now labelled
   "Different text size on the card" (it was "Its own text size", which confused the owner).
 
