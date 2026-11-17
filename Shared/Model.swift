@@ -399,6 +399,14 @@ struct TodoData: Codable, Hashable {
         settings = try c.decodeIfPresent(TodoSettings.self, forKey: .settings) ?? TodoSettings()
     }
 
+    /// A list's card that went with its last Clear is back for good once the list has something left to do. Without
+    /// this the card stayed marked as gone, so ticking everything again later took it away by itself, with no Clear.
+    mutating func reopenCards() {
+        for i in lists.indices where lists[i].cardDismissed && lists[i].leftCount > 0 {
+            lists[i].cardDismissed = false
+        }
+    }
+
     /// Whether a to-do with these words is permanent (the same words count as the same to-do, as with leftovers).
     func isPermanent(_ item: TodoItem) -> Bool {
         permanent.contains { $0.title.lowercased() == item.title.lowercased() }

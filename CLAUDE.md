@@ -126,7 +126,9 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   is picked under the switch (`CardSettings.clearColor`, a `Palette` index, orange by default).
 - The last Clear takes the card away: when clearing leaves nothing to do, the list's `cardDismissed` is set and its
   card ends (LiveCard.sync in the app; `CardContent.updateCards` from a widget's Clear). `TodoList.cardGone` = dismissed
-  and nothing left. It comes back if the list gets something left to do; the next list's card appears when the app
+  and nothing left. It comes back if the list gets something left to do, and `reopenCards()` (on every tick and app
+  save) then clears `cardDismissed`, so ticking everything later needs Clear again (it vanished by itself in 0.42); the
+  next list's card appears when the app
   next runs (an app can't start a Live Activity from the background without push). An "All done? Yes" prompt was tried
   in 0.41 and dropped for this (owner).
 - In the app, the circle of a to-do ticks and unticks it (the words still open editing); unticking brings a cleared

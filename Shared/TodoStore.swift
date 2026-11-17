@@ -91,6 +91,7 @@ enum TodoStore {
             data.lists[l].items[i].done.toggle()
             if !data.lists[l].items[i].done { data.lists[l].items[i].cleared = false }
         }
+        data.reopenCards()
         saveData(data)
         return data
     }

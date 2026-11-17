@@ -21,6 +21,7 @@ final class AppModel: ObservableObject {
 
     func commit() {
         data.prune()
+        data.reopenCards()
         let snapshot = data
         // Saved in the background, so the screen (e.g. dropping a dragged to-do) never waits for it.
         TodoStore.saveDataSoon(snapshot) {
