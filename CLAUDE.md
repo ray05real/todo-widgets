@@ -114,6 +114,21 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - The Add box has "Its own size" (with the slider) next to colour and font. Settings' card toggle is now labelled
   "Different text size on the card" (it was "Its own text size", which confused the owner).
 
+## Clear and All done (owner, 17 Nov 2026)
+- Press-and-hold was asked for on the card: impossible (widgets and Live Activities only take taps on Buttons /
+  Toggles with App Intents). Instead, Settings → "Clear button for ticked to-dos" (on by default,
+  `TodoSettings.clearButton`): an orange Clear in the card's top line (after "+N more", before the countdown), in the
+  Dynamic Island's expanded view and on the Home Screen widgets (a small ✓ on the narrow square one), shown once
+  something on show is ticked. It sets `TodoItem.cleared` on the list's ticked to-dos: they stay ticked in the app but
+  leave the card and widgets (`TodoList.onShow`), so hidden ones move up. Unticking clears `cleared`. The small Lock
+  Screen widget under the clock has no room for it: with the setting on it just skips ticked to-dos.
+  Intents: `WidgetClearIntent` (widget extension) and `ClearTickedIntent` (LiveActivityIntent, in the app).
+- Once every to-do is ticked, the card's top line asks "All done?" with a green Yes (`FinishListIntent`): the list's
+  `cardDismissed` is set and LiveCard.sync ends its card (`TodoList.cardGone` = dismissed and nothing left). It comes
+  back if the list gets something left to do; the next list's card appears when the app next runs (an app can't start
+  a Live Activity from the background without push).
+- `ContentState` gained `showClear` / `allDone` with a decodeIfPresent decoder, so cards already up keep showing.
+
 ## Carry over (28 Oct 2026)
 - Settings → Daily reset → "Carry over unfinished to-dos" (off by default; `TodoSettings.carryOverSince` = when it was
   switched on, so older lists aren't dragged in). Once a list ends, its unfinished to-dos go onto the list with the

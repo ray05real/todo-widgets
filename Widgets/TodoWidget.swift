@@ -7,9 +7,18 @@ struct TodoEntry: TimelineEntry {
     /// Which running list, in your order: 0 = the top one, 1 = the 2nd, 2 = the 3rd.
     let rank: Int
 
-    var list: TodoList? {
+    private var fullList: TodoList? {
         let running = data.running(at: date)
         return running.indices.contains(rank) ? running[rank] : nil
+    }
+
+    /// The list as the widgets show it (without to-dos cleared with the Clear button).
+    var list: TodoList? { fullList?.onShow }
+
+    /// Every to-do on the list is ticked (maybe all cleared off the widget too).
+    var allDone: Bool {
+        guard let full = fullList else { return false }
+        return !full.items.isEmpty && full.leftCount == 0
     }
 
     var noListText: String {
@@ -151,7 +160,7 @@ struct HomeScreenWidget: View {
                                                        rowHeight: rowHeight)
                     header(list, window: window, narrow: narrow)
                     if list.items.isEmpty {
-                        Text("Nothing on this list yet")
+                        Text(entry.allDone ? "All done" : "Nothing on this list yet")
                             .font(look.swiftUIFont)
                             .foregroundStyle(.secondary)
                     }
@@ -219,6 +228,13 @@ struct HomeScreenWidget: View {
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
+            if entry.data.settings.clearButton, window.items.contains(where: { $0.done }) {
+                // On the small square widget just a tick, to fit next to the countdown.
+                Button(intent: WidgetClearIntent(listID: list.id)) {
+                    ClearButtonLabel(compact: narrow)
+                }
+                .buttonStyle(.plain)
+            }
             Spacer(minLength: 0)
             if let end = list.end, timerShown, place == .topRight {
                 TimerText(end: end)
@@ -236,8 +252,16 @@ struct LockScreenWidget: View {
     var body: some View {
         if let list = entry.list, !list.items.isEmpty {
             let look = TextLook(font: entry.data.settings.text.font, size: 13, letterCase: entry.data.settings.text.letterCase)
+            // No room for a Clear button here: with it switched on, a ticked to-do leaves this widget straight away.
+            let shown = entry.data.settings.clearButton
+                ? Array(list.items.filter { !$0.done }.prefix(3))
+                : Array(list.window(height: 3) { _ in 1 }.items)
             VStack(alignment: .leading, spacing: 0) {
-                ForEach(list.window(height: 3) { _ in 1 }.items) { item in
+                if shown.isEmpty {
+                    Text("All done")
+                        .font(.system(size: 13))
+                }
+                ForEach(shown) { item in
                     Toggle(isOn: item.done, intent: WidgetToggleIntent(listID: list.id, itemID: item.id)) {
                         Text(look.display(item.title))
                     }
@@ -245,7 +269,7 @@ struct LockScreenWidget: View {
                 }
             }
         } else {
-            Text(entry.list == nil ? entry.noListText : "Nothing on the list yet")
+            Text(entry.list == nil ? entry.noListText : (entry.allDone ? "All done" : "Nothing on the list yet"))
                 .font(.system(size: 13))
         }
     }

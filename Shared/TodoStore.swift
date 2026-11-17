@@ -89,6 +89,30 @@ enum TodoStore {
         if let l = data.lists.firstIndex(where: { $0.id == listID }),
            let i = data.lists[l].items.firstIndex(where: { $0.id == itemID }) {
             data.lists[l].items[i].done.toggle()
+            if !data.lists[l].items[i].done { data.lists[l].items[i].cleared = false }
+        }
+        saveData(data)
+        return data
+    }
+
+    /// The Clear button on the card or a widget: the list's ticked to-dos leave the card and the widgets (they stay
+    /// ticked in the app), so the ones hidden below move up. Returns everything as it is now.
+    static func clearTicked(listID: String) -> TodoData {
+        var data = loadData()
+        if let l = data.lists.firstIndex(where: { $0.id == listID }) {
+            for i in data.lists[l].items.indices where data.lists[l].items[i].done {
+                data.lists[l].items[i].cleared = true
+            }
+        }
+        saveData(data)
+        return data
+    }
+
+    /// "All done?" → Yes on the card: the finished list's card goes away (until it has something left to do).
+    static func dismissCard(listID: String) -> TodoData {
+        var data = loadData()
+        if let l = data.lists.firstIndex(where: { $0.id == listID }) {
+            data.lists[l].cardDismissed = true
         }
         saveData(data)
         return data

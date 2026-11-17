@@ -10,6 +10,8 @@ struct TodoItem: Codable, Hashable, Identifiable {
     /// Its own font and size, if it doesn't use the list's (Settings).
     var font: FontChoice?
     var size: Double?
+    /// Ticked and then cleared off the card and the widgets with their Clear button (still ticked in the app).
+    var cleared = false
 
     init(id: String = UUID().uuidString, title: String, done: Bool = false, color: Int = 0,
          font: FontChoice? = nil, size: Double? = nil) {
@@ -30,6 +32,7 @@ struct TodoItem: Codable, Hashable, Identifiable {
         color = try c.decodeIfPresent(Int.self, forKey: .color) ?? 0
         font = try? c.decodeIfPresent(FontChoice.self, forKey: .font)
         size = try c.decodeIfPresent(Double.self, forKey: .size)
+        cleared = try c.decodeIfPresent(Bool.self, forKey: .cleared) ?? false
     }
 
     /// For the widget gallery's preview.
@@ -107,12 +110,25 @@ struct TodoList: Codable, Hashable, Identifiable {
     var showOnCard = true
     /// Whether its unfinished to-dos have been carried over to the next list since it ended (Settings).
     var carried = false
+    /// Everything was ticked and "All done?" was confirmed on its Lock Screen card, so the card went away. It comes
+    /// back if the list gets something left to do.
+    var cardDismissed = false
+
+    /// Off the Lock Screen: finished and confirmed as all done.
+    var cardGone: Bool { cardDismissed && !items.isEmpty && leftCount == 0 }
 
     func isRunning(at date: Date) -> Bool {
         start <= date && (end.map { date < $0 } ?? true)
     }
 
     var leftCount: Int { items.filter { !$0.done }.count }
+
+    /// The list as the card and the widgets show it: without the to-dos cleared off them (Clear button).
+    var onShow: TodoList {
+        var shown = self
+        shown.items = items.filter { !$0.cleared }
+        return shown
+    }
 
     func displayName(at now: Date) -> String {
         if let name, !name.isEmpty { return name }
@@ -171,6 +187,7 @@ extension TodoList {
         dismissed = try c.decodeIfPresent([String].self, forKey: .dismissed) ?? []
         showOnCard = try c.decodeIfPresent(Bool.self, forKey: .showOnCard) ?? true
         carried = try c.decodeIfPresent(Bool.self, forKey: .carried) ?? false
+        cardDismissed = try c.decodeIfPresent(Bool.self, forKey: .cardDismissed) ?? false
     }
 }
 
@@ -304,6 +321,9 @@ struct TodoSettings: Codable, Hashable {
     /// "Carry over unfinished to-dos": when it was switched on (nil = off). Only lists ending after this are carried
     /// over, so switching it on doesn't drag in to-dos from lists that ended days ago.
     var carryOverSince: Date?
+    /// A Clear button on the card and the widgets once something's ticked: it takes the ticked to-dos off them, so
+    /// the ones hidden below move up.
+    var clearButton = true
 
     init() {}
 
@@ -321,6 +341,7 @@ struct TodoSettings: Codable, Hashable {
         keepCard = try c.decodeIfPresent(Bool.self, forKey: .keepCard) ?? d.keepCard
         cardPerList = try c.decodeIfPresent(Bool.self, forKey: .cardPerList) ?? d.cardPerList
         carryOverSince = try c.decodeIfPresent(Date.self, forKey: .carryOverSince)
+        clearButton = try c.decodeIfPresent(Bool.self, forKey: .clearButton) ?? d.clearButton
     }
 
     /// The next daily reset after `date`.
@@ -398,7 +419,7 @@ struct TodoData: Codable, Hashable {
     /// that has "Show on the Lock Screen" on.
     func listsOnCards(at date: Date) -> [TodoList] {
         guard settings.cardPerList else { return current(at: date).map { [$0] } ?? [] }
-        return running(at: date).filter { $0.showOnCard }
+        return running(at: date).filter { $0.showOnCard && !$0.cardGone }
     }
 
     /// The running list a widget was set to (by name), or the current one.

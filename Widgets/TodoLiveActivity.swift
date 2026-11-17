@@ -22,7 +22,16 @@ struct TodoLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    TitleBadge(title: context.state.title)
+                    HStack(spacing: 6) {
+                        TitleBadge(title: context.state.title)
+                        if let id = context.state.listID, context.state.showClear,
+                           context.state.items.contains(where: { $0.done }) {
+                            Button(intent: ClearTickedIntent(listID: id, source: "Dynamic Island")) {
+                                ClearButtonLabel()
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     if let end = context.state.end, context.state.showCountdown, !context.isStale {
@@ -107,6 +116,48 @@ struct TitleBadge: View {
     }
 }
 
+/// The Clear button (Settings → Clear button): takes the ticked to-dos off the card and the widgets so the hidden
+/// ones move up. `compact` = just a tick, for the small square widget.
+struct ClearButtonLabel: View {
+    var compact = false
+
+    var body: some View {
+        Group {
+            if compact {
+                Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
+            } else {
+                Text("Clear").font(.system(size: 11, weight: .semibold))
+            }
+        }
+        .foregroundStyle(Color.black.opacity(0.85))
+        .padding(.horizontal, compact ? 6 : 8)
+        .frame(height: 18)
+        .background(Color.orange, in: Capsule())
+        .accessibilityLabel("Clear ticked to-dos")
+    }
+}
+
+/// "All done?" with a Yes button, once every to-do on the list is ticked: Yes takes the card away.
+struct AllDonePrompt: View {
+    let listID: String
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text("All done?")
+                .font(.system(size: 12, weight: .semibold))
+            Button(intent: FinishListIntent(listID: listID)) {
+                Text("Yes")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.black.opacity(0.85))
+                    .padding(.horizontal, 10)
+                    .frame(height: 18)
+                    .background(Color.green, in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
 /// The countdown's look everywhere: the size and brightness of a notification's "6m ago" (11 looked too small and
 /// faint, 15 too big).
 struct TimerText: View {
@@ -170,11 +221,21 @@ struct LockScreenCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 TitleBadge(title: state.title)
-                if state.total > state.first + state.items.count {
-                    // How many to-dos come after the ones on show (the ones before are all ticked).
-                    Text("+\(state.total - state.first - state.items.count) more")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                if let id = state.listID, state.allDone, !context.isStale {
+                    AllDonePrompt(listID: id)
+                } else {
+                    if state.total > state.first + state.items.count {
+                        // How many to-dos come after the ones on show (the ones before are all ticked).
+                        Text("+\(state.total - state.first - state.items.count) more")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    if let id = state.listID, state.showClear, !context.isStale, state.items.contains(where: { $0.done }) {
+                        Button(intent: ClearTickedIntent(listID: id, source: "Lock Screen card")) {
+                            ClearButtonLabel()
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
                 Spacer(minLength: 0)
                 if let end = state.end, timerShown, place == .topRight {
@@ -193,7 +254,7 @@ struct LockScreenCard: View {
                 }
                 .padding(.top, 6)
             } else if state.items.isEmpty {
-                Text("Nothing on this list yet. Tap to add some.")
+                Text(state.allDone ? "Everything's ticked off." : "Nothing on this list yet. Tap to add some.")
                     .font(.system(size: 14))
                     .foregroundStyle(.secondary)
                     .padding(.top, 6)

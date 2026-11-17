@@ -30,6 +30,70 @@ struct WidgetToggleIntent: AppIntent {
     }
 }
 
+/// The Clear button on a Home Screen widget: runs in the widget itself, like its ticks.
+struct WidgetClearIntent: AppIntent {
+    static var title: LocalizedStringResource = "Clear ticked to-dos on a widget"
+    static var isDiscoverable = false
+
+    @Parameter(title: "List") var listID: String
+
+    init() {}
+
+    init(listID: String) {
+        self.listID = listID
+    }
+
+    func perform() async throws -> some IntentResult {
+        let data = TodoStore.clearTicked(listID: listID)
+        await CardContent.updateCards(with: data)
+        return .result()
+    }
+}
+
+/// The Clear button on the Lock Screen card and in the Dynamic Island (runs in the app, like their ticks).
+struct ClearTickedIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Clear ticked to-dos"
+    static var isDiscoverable = false
+
+    @Parameter(title: "List") var listID: String
+    @Parameter(title: "From") var source: String
+
+    init() {}
+
+    init(listID: String, source: String) {
+        self.listID = listID
+        self.source = source
+    }
+
+    func perform() async throws -> some IntentResult {
+        #if !WIDGET_EXTENSION
+        await TodoActions.clearTicked(listID: listID, from: source)
+        #endif
+        return .result()
+    }
+}
+
+/// "All done?" → Yes on the Lock Screen card: the card goes away.
+struct FinishListIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Finish a list"
+    static var isDiscoverable = false
+
+    @Parameter(title: "List") var listID: String
+
+    init() {}
+
+    init(listID: String) {
+        self.listID = listID
+    }
+
+    func perform() async throws -> some IntentResult {
+        #if !WIDGET_EXTENSION
+        await TodoActions.finish(listID: listID)
+        #endif
+        return .result()
+    }
+}
+
 struct ToggleItemIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Tick a to-do"
 

@@ -56,6 +56,8 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                // Takes ticked to-dos off the card and the widgets, so the hidden ones move up.
+                Toggle("Clear button for ticked to-dos", isOn: $model.data.settings.clearButton)
                 Toggle("Show the count in the Dynamic Island", isOn: $model.data.settings.card.showInIsland)
                 Toggle("Show the countdown", isOn: $model.data.settings.showCountdown)
                 if model.data.settings.showCountdown {

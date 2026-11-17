@@ -10,12 +10,15 @@ enum CardContent {
         var look = data.settings.text
         if let size = card.size { look.size = size }
         let countdown = data.settings.showCountdown
-        guard let list else {
+        guard let full = list else {
             return TodoActivityAttributes.ContentState(
                 listID: nil, title: "TO DO", end: nil, items: [], first: 0, total: 0, left: 0,
                 look: look, card: card, showCountdown: countdown, nextReady: !data.planned(after: now).isEmpty
             )
         }
+        // To-dos cleared with the Clear button stay ticked in the app but leave the card.
+        let list = full.onShow
+        let allDone = !full.items.isEmpty && full.leftCount == 0
         // A countdown at the bottom gets its own line under a column (one to-do fewer there); at the top it shares
         // the title line.
         let atBottom = countdown && list.end != nil && card.timerPlace != .topRight
@@ -32,7 +35,7 @@ enum CardContent {
         return TodoActivityAttributes.ContentState(
             listID: list.id, title: list.headerTitle, end: list.end, items: items, first: window.start,
             total: list.items.count, left: list.leftCount, look: look, card: card, showCountdown: countdown,
-            nextReady: data.next(after: list) != nil
+            nextReady: data.next(after: list) != nil, showClear: data.settings.clearButton, allDone: allDone
         )
     }
 
