@@ -108,6 +108,8 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   tall ones (the first screen's taller rows), so with words the buttons, and how far the row slid, changed row to row.
 - Tapping a to-do scrolls it straight to the top of the screen (no waiting for the keyboard), with its colour/font/size
   controls under it; while one is being changed the list gets 420 pt of room at the bottom so the last ones can go up too.
+- No "Done" bar above the keyboard (added in 0.36, removed in 0.39: on iOS 26 it floats as a glass button over the list
+  and covered the controls). The keyboard's own blue ✓ finishes, and scrolling the list puts the keyboard away.
 - The Add box has "Its own size" (with the slider) next to colour and font. Settings' card toggle is now labelled
   "Different text size on the card" (it was "Its own text size", which confused the owner).
 

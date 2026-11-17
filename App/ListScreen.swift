@@ -174,10 +174,6 @@ struct ListScreen: View {
                     }
                 }
             }
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") { focus = nil }
-            }
         }
         .sheet(isPresented: $editingTimes) {
             ListTimesEditor(list: list)
