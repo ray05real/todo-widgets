@@ -349,10 +349,12 @@ struct SavedList: Codable, Hashable, Identifiable {
     }
 }
 
-/// Everything the app keeps: all the lists, the saved ones and the settings.
+/// Everything the app keeps: all the lists, the saved ones, the permanent to-dos and the settings.
 struct TodoData: Codable, Hashable {
     var lists: [TodoList] = []
     var saved: [SavedList] = []
+    /// To-dos made permanent (swipe one left): offered on every list, to add back any day.
+    var permanent: [TodoItem] = []
     var settings = TodoSettings()
 
     init() {}
@@ -361,7 +363,20 @@ struct TodoData: Codable, Hashable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         lists = try c.decodeIfPresent([TodoList].self, forKey: .lists) ?? []
         saved = (try? c.decodeIfPresent([SavedList].self, forKey: .saved)) ?? []
+        permanent = (try? c.decodeIfPresent([TodoItem].self, forKey: .permanent)) ?? []
         settings = try c.decodeIfPresent(TodoSettings.self, forKey: .settings) ?? TodoSettings()
+    }
+
+    /// Whether a to-do with these words is permanent (the same words count as the same to-do, as with leftovers).
+    func isPermanent(_ item: TodoItem) -> Bool {
+        permanent.contains { $0.title.lowercased() == item.title.lowercased() }
+    }
+
+    /// Permanent to-dos offered on `list`: the ones not on it yet and not waved away (×) from it.
+    func permanentSuggestions(for list: TodoList, at now: Date) -> [TodoItem] {
+        guard list.end.map({ $0 > now }) ?? true else { return [] }
+        let have = Set(list.items.map { $0.title.lowercased() })
+        return permanent.filter { !have.contains($0.title.lowercased()) && !list.dismissed.contains($0.id) }
     }
 
     /// Lists running at `date`, in the owner's order (drag to reorder on the first screen).
@@ -419,9 +434,10 @@ struct TodoData: Codable, Hashable {
             .filter { $0.id != list.id && $0.name == list.name && $0.end != nil && $0.start < list.start }
             .max { $0.start < $1.start }
         guard let previous else { return [] }
+        // Permanent ones have their own section, so they aren't offered twice.
         let have = Set(list.items.map { $0.title.lowercased() })
         return previous.items.filter {
-            !$0.done && !have.contains($0.title.lowercased()) && !list.dismissed.contains($0.id)
+            !$0.done && !have.contains($0.title.lowercased()) && !list.dismissed.contains($0.id) && !isPermanent($0)
         }
     }
 

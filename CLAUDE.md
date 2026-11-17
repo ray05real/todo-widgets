@@ -56,8 +56,10 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
 - "TO DO" sits top left in an outlined rounded box (no colon); the countdown ("2 hrs, 13 min", no "resets in")
   bottom right. The ↻ renew button was removed (it confused the owner; the card renews itself).
 - Switches: card on/off, the count in the Dynamic Island on/off (empty compact views), countdown.
-- "Not finished last time" sits below the Add box.
-- Swipe left (WhatsApp-style): on a list, Rename / Delete; on a to-do, Edit / Delete; a full swipe deletes. The list's ••• menu only holds the per-list card switch.
+- Inside a list (owner, 17 Nov 2026): the Add box at the top, then the to-dos, then "Permanent", then "Not finished
+  last time".
+- Swipe left (WhatsApp-style): on a list, Rename / Delete; on a to-do, Make permanent / Delete; a full swipe deletes.
+  Swipe a list right: Save (for reuse). The list's ••• menu only holds the per-list card switch (only shown with Every list).
 - Tips (section footers) are off by default (Settings → Show tips); the owner found them wordy.
 - The countdown uses SystemFormatStyle.DateOffset (no seconds), size 13. Where it sits is a setting (CardSettings.timerPlace): top right in the title line (default, costs no to-do), or bottom left / bottom right on its own line under the first / last column. "+N more" (not "1–11 of 12", which read like a ticked count) shows how many come after the ones on show.
 - App icon and in-app logo: "To Do" in a box with rounded (continuous) corners and no slit (the owner removed it), one slit each in the T and D like Revolut's R, white-on-black (inverted from black-on-white, owner 26 Oct), shaded with a darker rim (drawn
@@ -90,6 +92,20 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   renews after 1). Then widget taps moved to WidgetToggleIntent, a plain AppIntent that iOS runs in the widget
   extension (no app to wake; it also tries CardContent.updateCards); card and Dynamic Island taps stay
   ToggleItemIntent (LiveActivityIntent, in the app). The widget timeline is just now + the next change.
+
+## Editing a list (owner, 17 Nov 2026)
+- Tapping a to-do in the app changes it (the keyboard opens in place; its colour, font and own-size controls show under
+  it while it's being changed). It no longer ticks it: ticking is for the widgets, the card and the Dynamic Island; the
+  circle only shows the state. The Edit sheet and the press-and-hold menu are gone.
+- Reordering is the iPhone-standard ≡ handle on the right of every to-do, always shown (no Edit button, no
+  press-and-hold drag). SwiftUI only shows real reorder handles in edit mode, which turns swipe actions off, so the
+  handle is our own DragGesture (global coordinates) that swaps the to-do past each neighbour whose middle the finger
+  crosses (row heights are measured), and saves the order on release.
+- Permanent to-dos (`TodoData.permanent`, matched by their words): swipe a to-do left → Make permanent (Not permanent
+  if it already is). Every list that hasn't ended offers them in a "Permanent" section (+ adds, × skips it on that
+  list via `dismissed`, swipe left = Not permanent, "Add all"). They're left out of "Not finished last time".
+- The Add box has "Its own size" (with the slider) next to colour and font. Settings' card toggle is now labelled
+  "Different text size on the card" (it was "Its own text size", which confused the owner).
 
 ## Carry over (28 Oct 2026)
 - Settings → Daily reset → "Carry over unfinished to-dos" (off by default; `TodoSettings.carryOverSince` = when it was

@@ -60,6 +60,22 @@ final class AppModel: ObservableObject {
         commit()
     }
 
+    /// Swipe a to-do left → Make permanent (a fresh, unticked copy is kept and offered on every list), or, if it
+    /// already is, stop it being permanent.
+    func togglePermanent(_ item: TodoItem) {
+        if let i = data.permanent.firstIndex(where: { $0.title.lowercased() == item.title.lowercased() }) {
+            data.permanent.remove(at: i)
+        } else {
+            data.permanent.append(TodoItem(title: item.title, color: item.color, font: item.font, size: item.size))
+        }
+        commit()
+    }
+
+    func removePermanent(_ id: String) {
+        data.permanent.removeAll { $0.id == id }
+        commit()
+    }
+
     /// Adds a list at the bottom of the order (so it doesn't take over the card), or right after `anchorID`,
     /// optionally starting with some to-dos (from a saved list).
     @discardableResult

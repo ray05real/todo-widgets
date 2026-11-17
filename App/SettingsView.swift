@@ -96,7 +96,9 @@ struct SettingsView: View {
                     Text("2 columns").tag(2)
                 }
                 .pickerStyle(.segmented)
-                Toggle("Its own text size", isOn: Binding(
+                // The card's text can differ from the lists' (Text, at the top): smaller fits more to-dos on the card,
+                // whose height Apple fixes.
+                Toggle("Different text size on the card", isOn: Binding(
                     get: { model.data.settings.card.size != nil },
                     set: { model.data.settings.card.size = $0 ? 14 : nil }
                 ))

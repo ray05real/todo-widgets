@@ -12,6 +12,9 @@ struct HomeView: View {
     /// The list or saved list being renamed (from a swipe), and the name being typed.
     @State private var renaming: String?
     @State private var nameDraft = ""
+    /// The list being saved for reuse (swiping it right), and the name it's saved under.
+    @State private var saving: String?
+    @State private var saveName = ""
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -70,6 +73,19 @@ struct HomeView: View {
         .sheet(isPresented: $showNew) {
             NewListSheet(startFrom: newFrom) { id in path.append(id) }
         }
+        .alert("Save for reuse", isPresented: Binding(get: { saving != nil }, set: { if !$0 { saving = nil } })) {
+            TextField("Name, e.g. Shopping", text: $saveName)
+            Button("Save") {
+                if let id = saving, let list = model.list(id) {
+                    let name = saveName.trimmingCharacters(in: .whitespaces)
+                    model.saveForReuse(list, as: name.isEmpty ? list.displayName(at: .now) : name)
+                }
+                saving = nil
+            }
+            Button("Cancel", role: .cancel) { saving = nil }
+        } message: {
+            Text("Its to-dos are kept under Saved, to start new lists from.")
+        }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
             model.reload()
@@ -117,6 +133,7 @@ struct HomeView: View {
                             ListSummary(list: list, now: now, onCard: model.data.settings.keepCard && onCards.contains(list.id))
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) { swipeActions(for: list) }
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) { saveAction(for: list) }
                     }
                     .onMove { source, destination in
                         model.moveRunning(from: source, to: destination, at: now)
@@ -136,6 +153,7 @@ struct HomeView: View {
                             ListSummary(list: list, now: now)
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) { swipeActions(for: list) }
+                        .swipeActions(edge: .leading, allowsFullSwipe: true) { saveAction(for: list) }
                     }
                 }
             }
@@ -208,6 +226,17 @@ struct HomeView: View {
             Label("Rename", systemImage: "pencil")
         }
         .tint(Color.gray)
+    }
+
+    /// Swiping a list right: Save it for reuse (it goes under Saved, to start new lists from).
+    private func saveAction(for list: TodoList) -> some View {
+        Button {
+            saveName = list.name ?? ""
+            saving = list.id
+        } label: {
+            Label("Save", systemImage: "tray.and.arrow.down")
+        }
+        .tint(Color.blue)
     }
 }
 

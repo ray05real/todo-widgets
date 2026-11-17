@@ -36,32 +36,6 @@ struct TimeLabel: View {
     }
 }
 
-/// A to-do in the app: tap anywhere on the row to tick it.
-struct ItemRow: View {
-    let item: TodoItem
-    let look: TextLook
-    let onTick: () -> Void
-
-    var body: some View {
-        let tint = Palette.color(item.color)
-        Button(action: onTick) {
-            HStack(spacing: 12) {
-                Image(systemName: item.done ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: look.circle + 2))
-                    .foregroundStyle(tint.opacity(item.done ? 0.55 : 0.9))
-                Text(look.display(item.title))
-                    .font(look.swiftUIFont)
-                    .strikethrough(item.done)
-                    .foregroundStyle(tint.opacity(item.done ? 0.45 : 1))
-                Spacer(minLength: 0)
-            }
-            .frame(minHeight: 36)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 /// The colours to pick from.
 struct ColorDots: View {
     @Binding var selection: Int
@@ -117,64 +91,19 @@ struct FontChips: View {
     }
 }
 
-/// Changing one to-do: its words, colour, font and size, or deleting it.
-struct ItemEditor: View {
-    @EnvironmentObject private var model: AppModel
-    @Environment(\.dismiss) private var dismiss
-    let listID: String
-    @State var item: TodoItem
+/// "Its own size" for a to-do (when adding one, or while changing one) and, once on, its size slider. Off (nil) = the
+/// size in Settings.
+struct OwnSizeToggle: View {
+    @Binding var size: Double?
+    let defaultSize: Double
 
     var body: some View {
-        let look = model.data.settings.text.applied(to: item)
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("To-do", text: $item.title, axis: .vertical)
-                        .font(look.swiftUIFont)
-                        .foregroundStyle(Palette.color(item.color))
-                }
-                Section("Colour") {
-                    ColorDots(selection: $item.color)
-                }
-                Section("Font") {
-                    FontChips(selection: $item.font, sameAsList: true)
-                }
-                Section {
-                    Toggle("Its own size", isOn: Binding(
-                        get: { item.size != nil },
-                        set: { item.size = $0 ? model.data.settings.text.size : nil }
-                    ))
-                    if let size = item.size {
-                        SizeSlider(size: Binding(get: { size }, set: { item.size = $0 }))
-                    }
-                } header: {
-                    Text("Size")
-                } footer: {
-                    Tip("Otherwise it uses the size in Settings.")
-                }
-                Section {
-                    Button("Delete to-do", role: .destructive) {
-                        model.edit(listID) { list in list.items.removeAll { $0.id == item.id } }
-                        dismiss()
-                    }
-                }
-            }
-            .navigationTitle("Edit to-do")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let edited = item
-                        model.edit(listID) { list in
-                            if let i = list.items.firstIndex(where: { $0.id == edited.id }) { list.items[i] = edited }
-                        }
-                        dismiss()
-                    }
-                }
-            }
+        Toggle("Its own size", isOn: Binding(
+            get: { size != nil },
+            set: { size = $0 ? defaultSize : nil }
+        ))
+        if let size {
+            SizeSlider(size: Binding(get: { size }, set: { self.size = $0 }))
         }
     }
 }
