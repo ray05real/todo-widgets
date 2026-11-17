@@ -122,7 +122,8 @@ A personal iPhone to-do app for the owner only (not for the App Store). Sideload
   something on show is ticked. It sets `TodoItem.cleared` on the list's ticked to-dos: they stay ticked in the app but
   leave the card and widgets (`TodoList.onShow`), so hidden ones move up. Unticking clears `cleared`. The small Lock
   Screen widget under the clock has no room for it: with the setting on it just skips ticked to-dos.
-  Intents: `WidgetClearIntent` (widget extension) and `ClearTickedIntent` (LiveActivityIntent, in the app).
+  Intents: `WidgetClearIntent` (widget extension) and `ClearTickedIntent` (LiveActivityIntent, in the app). Its colour
+  is picked under the switch (`CardSettings.clearColor`, a `Palette` index, orange by default).
 - The last Clear takes the card away: when clearing leaves nothing to do, the list's `cardDismissed` is set and its
   card ends (LiveCard.sync in the app; `CardContent.updateCards` from a widget's Clear). `TodoList.cardGone` = dismissed
   and nothing left. It comes back if the list gets something left to do; the next list's card appears when the app

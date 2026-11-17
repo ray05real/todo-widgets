@@ -231,7 +231,7 @@ struct HomeScreenWidget: View {
             if entry.data.settings.clearButton, window.items.contains(where: { $0.done }) {
                 // On the small square widget just a tick, to fit next to the countdown.
                 Button(intent: WidgetClearIntent(listID: list.id)) {
-                    ClearButtonLabel(compact: narrow)
+                    ClearButtonLabel(compact: narrow, color: entry.data.settings.card.clearColor)
                 }
                 .buttonStyle(.plain)
             }

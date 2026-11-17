@@ -273,6 +273,8 @@ struct CardSettings: Codable, Hashable {
     /// Two columns fit twice as many short to-dos on the card.
     var columns = 1
     var showInIsland = true
+    /// The Clear button's colour on the card and the widgets, an index into `Palette.colors` (2 = orange).
+    var clearColor = 2
 
     init() {}
 
@@ -287,6 +289,7 @@ struct CardSettings: Codable, Hashable {
         size = try c.decodeIfPresent(Double.self, forKey: .size)
         columns = try c.decodeIfPresent(Int.self, forKey: .columns) ?? d.columns
         showInIsland = try c.decodeIfPresent(Bool.self, forKey: .showInIsland) ?? d.showInIsland
+        clearColor = try c.decodeIfPresent(Int.self, forKey: .clearColor) ?? d.clearColor
     }
 
     /// The brightness of the look that's picked.

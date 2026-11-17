@@ -58,6 +58,12 @@ struct SettingsView: View {
                 }
                 // Takes ticked to-dos off the card and the widgets, so the hidden ones move up.
                 Toggle("Clear button for ticked to-dos", isOn: $model.data.settings.clearButton)
+                if model.data.settings.clearButton {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Clear button colour")
+                        ColorDots(selection: $model.data.settings.card.clearColor)
+                    }
+                }
                 Toggle("Show the count in the Dynamic Island", isOn: $model.data.settings.card.showInIsland)
                 Toggle("Show the countdown", isOn: $model.data.settings.showCountdown)
                 if model.data.settings.showCountdown {

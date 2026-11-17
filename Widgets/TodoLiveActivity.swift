@@ -27,7 +27,7 @@ struct TodoLiveActivity: Widget {
                         if let id = context.state.listID, context.state.showClear,
                            context.state.items.contains(where: { $0.done }) {
                             Button(intent: ClearTickedIntent(listID: id, source: "Dynamic Island")) {
-                                ClearButtonLabel()
+                                ClearButtonLabel(color: context.state.card.clearColor)
                             }
                             .buttonStyle(.plain)
                         }
@@ -117,9 +117,10 @@ struct TitleBadge: View {
 }
 
 /// The Clear button (Settings → Clear button): takes the ticked to-dos off the card and the widgets so the hidden
-/// ones move up. `compact` = just a tick, for the small square widget.
+/// ones move up. `compact` = just a tick, for the small square widget; `color` = its colour from Settings.
 struct ClearButtonLabel: View {
     var compact = false
+    var color = 2
 
     var body: some View {
         Group {
@@ -129,11 +130,21 @@ struct ClearButtonLabel: View {
                 Text("Clear").font(.system(size: 11, weight: .semibold))
             }
         }
-        .foregroundStyle(Color.black.opacity(0.85))
+        .foregroundStyle(textColor)
         .padding(.horizontal, compact ? 6 : 8)
         .frame(height: 18)
-        .background(Color.orange, in: Capsule())
+        .background(Palette.color(color), in: Capsule())
         .accessibilityLabel("Clear ticked to-dos")
+    }
+
+    /// Readable on the chosen colour: dark on the bright ones, white on blue and purple, and the opposite of the
+    /// text colour on the plain (white or black) one.
+    private var textColor: Color {
+        switch color {
+        case 0: return Color(.systemBackground)
+        case 6, 7: return Color.white
+        default: return Color.black.opacity(0.85)
+        }
     }
 }
 
@@ -209,7 +220,7 @@ struct LockScreenCard: View {
                 // Once everything's ticked, this last Clear takes the whole card away.
                 if let id = state.listID, state.showClear, !context.isStale, state.items.contains(where: { $0.done }) {
                     Button(intent: ClearTickedIntent(listID: id, source: "Lock Screen card")) {
-                        ClearButtonLabel()
+                        ClearButtonLabel(color: state.card.clearColor)
                     }
                     .buttonStyle(.plain)
                 }
